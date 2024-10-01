@@ -6,15 +6,14 @@ using UnityEditor.TextCore.Text;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Linq;
+using System.Drawing;
 
 public class TerrainManager : Manager
 {
-    [SerializeField] TileBase[] tiles;
+    [SerializeField] TileBase[] tiles, rock, tree;
     [SerializeField] Tilemap ground, decoration, collisions;
     [SerializeField] Grid<Node> bitmap;
     [SerializeField] int waterLevel;
-    [SerializeField] GameObject[] terrainExtras;
-
     [SerializeField] GameManager gameManager;
     [SerializeField] Transform player;
     PerlinNoise noise;
@@ -223,12 +222,18 @@ public class TerrainManager : Manager
             if (gapLengths[x].Item2 >= 5 && gapLengths[x].Item2 < 8)
             {
                 int midpoint = gapLengths[x].Item1 + gapLengths[x].Item2 / 2;
-                bitmap = LoadBitmap(bitmap, midpoint, perlinHeights[gapLengths[x].Item1], midpoint + 1, perlinHeights[gapLengths[x].Item1] + 1, ROCK);
+                bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1], midpoint + 2, perlinHeights[gapLengths[x].Item1] + 3, ROCK);
+                bitmap = LoadBitmap(bitmap, midpoint - 1, perlinHeights[gapLengths[x].Item1] + 3, midpoint + 2, perlinHeights[gapLengths[x].Item1] + 4, ROCK);
+                bitmap = LoadBitmap(bitmap, midpoint - 1, perlinHeights[gapLengths[x].Item1] + 4, midpoint + 1, perlinHeights[gapLengths[x].Item1] + 5, ROCK);
             }
             else if (gapLengths[x].Item2 >= 8)
             {
-                int midpoint = gapLengths[x].Item1 + gapLengths[x].Item2 / 2;
-                bitmap = LoadBitmap(bitmap, midpoint, perlinHeights[gapLengths[x].Item1], midpoint + 1, perlinHeights[gapLengths[x].Item1] + 1, TREE);
+                int midpoint = gapLengths[x].Item2 / 2;
+
+                bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1], midpoint + 3, perlinHeights[gapLengths[x].Item1] + 1, TREE);
+                bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1] + 1, midpoint + 2, perlinHeights[gapLengths[x].Item1] + 2, TREE);
+                bitmap = LoadBitmap(bitmap, midpoint - 3, perlinHeights[gapLengths[x].Item1] + 2, midpoint + 4, perlinHeights[gapLengths[x].Item1] + 5, TREE);
+                bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1] + 5, midpoint + 3, perlinHeights[gapLengths[x].Item1] + 6, TREE);
             }
         }
         return bitmap;
@@ -274,6 +279,60 @@ public class TerrainManager : Manager
                 {
                     ground.SetTile(new Vector3Int(x, y), tiles[GRASSTILE]);
                     collisions.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
+                }
+                else if (node.binaryValue == TREE)
+                {
+                    ground.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
+                    collisions.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
+
+                    if (bitmap.GetGridObject(x, y - 1).binaryValue == GRASS && bitmap.GetGridObject(x - 1, y).binaryValue == SKY)
+                    {
+                        for (int i = 0; i < 5; i++)
+                        {
+                            decoration.SetTile(new Vector3Int(x + i, y), tree[i]);
+                        }
+                        for (int i = 0; i < 4; i++)
+                        {
+                            decoration.SetTile(new Vector3Int(x + i, y + 1), tree[5 + i]);
+                        }
+                        for (int i = 0; i < 7; i++)
+                        {
+                            for (int j = 2; j < 5; j++)
+                            {
+                                int n = 7 * (j - 2);
+                                decoration.SetTile(new Vector3Int(x - 1 + i, y + j), tree[9 + n + i]);
+                            }
+                        }
+                        for (int i = 0; i < 5; i++)
+                        {
+                            decoration.SetTile(new Vector3Int(x + i, y + 5), tree[30 + i]);
+                        }
+                    }
+                }
+                else if (node.binaryValue == ROCK)
+                {
+                    ground.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
+                    collisions.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
+
+                    if (bitmap.GetGridObject(x, y - 1).binaryValue == GRASS && bitmap.GetGridObject(x - 1, y).binaryValue == SKY)
+                    {
+                        for (int i = 0; i < 4; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                int n = 4 * j;
+                                decoration.SetTile(new Vector3Int(x + i, y + j), rock[n + i]);
+                            }
+                        }
+                        for (int i = 0; i < 3; i++)
+                        {
+                            decoration.SetTile(new Vector3Int(x + 1 + i, y + 3), rock[12 + i]);
+                        }
+                        for (int i = 0; i < 2; i++)
+                        {
+                            decoration.SetTile(new Vector3Int(x + 1 + i, y + 4), rock[15 + i]);
+                        }
+                    }
                 }
             }
         }
