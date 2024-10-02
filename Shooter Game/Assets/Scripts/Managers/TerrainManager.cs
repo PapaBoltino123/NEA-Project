@@ -283,7 +283,6 @@ public class TerrainManager : Manager
                 else if (node.binaryValue == WATER)
                 {
                     ground.SetTile(new Vector3Int(x, y), tiles[WATERTILE]);
-                    collisions.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
                 }
                 else if (node.binaryValue == FLOWERS)
                 {
