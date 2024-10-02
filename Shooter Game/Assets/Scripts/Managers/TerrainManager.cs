@@ -7,6 +7,9 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Linq;
 using System.Drawing;
+using System.Runtime.InteropServices;
+using UnityEngine.UIElements;
+using TMPro.EditorUtilities;
 
 public class TerrainManager : Manager
 {
@@ -30,7 +33,7 @@ public class TerrainManager : Manager
 
     public override void RunManager()
     {
-        int seed = gameManager.seed; int smoothness = gameManager.smoothness; Grid<Node> bitmap = gameManager.grid;
+        int seed = gameManager.seed; int smoothness = gameManager.smoothness; bitmap = gameManager.grid;
         noise = new PerlinNoise(seed);
         bitmap = LoadBitmap(bitmap, 0, 0, bitmap.GetWidth(), bitmap.GetHeight(), SKY);
         bitmap = GenerateGround(bitmap, seed, smoothness);
@@ -39,7 +42,9 @@ public class TerrainManager : Manager
         bitmap = GenerateTreesandRocks(bitmap, seed, smoothness);
         gameManager.validSpawnPoints = GetSpawnPoints(bitmap, smoothness);
         player.position = SetPlayerPosition(bitmap);
-
+    }
+    private void Update()
+    {
         (int, int) playerCoordinates = bitmap.GetXY(player.position);
         minX = playerCoordinates.Item1 - 250; maxX = playerCoordinates.Item1 + 250;
         RenderTiles(bitmap, minX, maxX);
@@ -138,7 +143,7 @@ public class TerrainManager : Manager
         } while (isNotSpawnable == true);
 
         Vector3 spawnPosition = bitmap.GetWorldPosition(spawnNode.x, spawnNode.y);
-        return new Vector3(spawnPosition.x + 0.08f, spawnPosition.y + 0.1f);
+        return new Vector3(spawnPosition.x + 0.08f, spawnPosition.y + 0.3f);
     }
     private Grid<Node> GeneratePlants(Grid<Node> bitmap, int seed, int smoothness)
     {
@@ -219,21 +224,37 @@ public class TerrainManager : Manager
         }
         for (int x = 0; x < gapLengths.Count; x++)
         {
-            if (gapLengths[x].Item2 >= 5 && gapLengths[x].Item2 < 8)
+            bool isWater = false;
+            for (int i = gapLengths[x].Item1; i < gapLengths[x].Item1 + gapLengths[x].Item2; i++)
             {
-                int midpoint = gapLengths[x].Item1 + gapLengths[x].Item2 / 2;
-                bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1], midpoint + 2, perlinHeights[gapLengths[x].Item1] + 3, ROCK);
-                bitmap = LoadBitmap(bitmap, midpoint - 1, perlinHeights[gapLengths[x].Item1] + 3, midpoint + 2, perlinHeights[gapLengths[x].Item1] + 4, ROCK);
-                bitmap = LoadBitmap(bitmap, midpoint - 1, perlinHeights[gapLengths[x].Item1] + 4, midpoint + 1, perlinHeights[gapLengths[x].Item1] + 5, ROCK);
+                if (bitmap.GetGridObject(i, waterLevel - 2).binaryValue == WATER)
+                {
+                    isWater = true;
+                }
             }
-            else if (gapLengths[x].Item2 >= 8)
+            if (isWater == false)
             {
-                int midpoint = gapLengths[x].Item2 / 2;
+                if (gapLengths[x].Item2 >= 6 && gapLengths[x].Item2 < 9)
+                {
+                    int midpoint = gapLengths[x].Item1 + gapLengths[x].Item2 / 2 + 1;
+                    int chance = random.Next(1, 8);
 
-                bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1], midpoint + 3, perlinHeights[gapLengths[x].Item1] + 1, TREE);
-                bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1] + 1, midpoint + 2, perlinHeights[gapLengths[x].Item1] + 2, TREE);
-                bitmap = LoadBitmap(bitmap, midpoint - 3, perlinHeights[gapLengths[x].Item1] + 2, midpoint + 4, perlinHeights[gapLengths[x].Item1] + 5, TREE);
-                bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1] + 5, midpoint + 3, perlinHeights[gapLengths[x].Item1] + 6, TREE);
+                    if (chance != 5)
+                    {
+                        bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1], midpoint + 2, perlinHeights[gapLengths[x].Item1] + 3, ROCK);
+                        bitmap = LoadBitmap(bitmap, midpoint - 1, perlinHeights[gapLengths[x].Item1] + 3, midpoint + 2, perlinHeights[gapLengths[x].Item1] + 4, ROCK);
+                        bitmap = LoadBitmap(bitmap, midpoint - 1, perlinHeights[gapLengths[x].Item1] + 4, midpoint + 1, perlinHeights[gapLengths[x].Item1] + 5, ROCK);
+                    }
+                }
+                else if (gapLengths[x].Item2 >= 9)
+                {
+                    int midpoint = gapLengths[x].Item1 + gapLengths[x].Item2 / 2;
+
+                    bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1], midpoint + 3, perlinHeights[gapLengths[x].Item1] + 1, TREE);
+                    bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1] + 1, midpoint + 2, perlinHeights[gapLengths[x].Item1] + 2, TREE);
+                    bitmap = LoadBitmap(bitmap, midpoint - 3, perlinHeights[gapLengths[x].Item1] + 2, midpoint + 4, perlinHeights[gapLengths[x].Item1] + 5, TREE);
+                    bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1] + 5, midpoint + 3, perlinHeights[gapLengths[x].Item1] + 6, TREE);
+                }
             }
         }
         return bitmap;
@@ -248,7 +269,6 @@ public class TerrainManager : Manager
                 if (node.binaryValue == SKY)
                 {
                     ground.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
-                    collisions.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
                 }
                 else if (node.binaryValue == DIRT)
                 {
@@ -283,7 +303,6 @@ public class TerrainManager : Manager
                 else if (node.binaryValue == TREE)
                 {
                     ground.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
-                    collisions.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
 
                     if (bitmap.GetGridObject(x, y - 1).binaryValue == GRASS && bitmap.GetGridObject(x - 1, y).binaryValue == SKY)
                     {
@@ -312,7 +331,6 @@ public class TerrainManager : Manager
                 else if (node.binaryValue == ROCK)
                 {
                     ground.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
-                    collisions.SetTile(new Vector3Int(x, y), tiles[SKYTILE]);
 
                     if (bitmap.GetGridObject(x, y - 1).binaryValue == GRASS && bitmap.GetGridObject(x - 1, y).binaryValue == SKY)
                     {
