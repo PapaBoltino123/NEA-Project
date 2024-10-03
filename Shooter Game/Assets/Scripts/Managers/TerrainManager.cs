@@ -40,6 +40,7 @@ public class TerrainManager : Manager
         bitmap = GenerateWater(bitmap, seed);
         bitmap = GeneratePlants(bitmap, seed, smoothness);
         bitmap = GenerateTreesandRocks(bitmap, seed, smoothness);
+
         gameManager.validSpawnPoints = GetSpawnPoints(bitmap, smoothness);
         player.position = SetPlayerPosition(bitmap);
     }
