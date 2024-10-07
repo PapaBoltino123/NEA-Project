@@ -29,10 +29,16 @@ public class TerrainManager : Manager
     private const string ROCK = "0111";
     private const string TREE = "1000";
     #endregion
+    #region Properties
+    public Grid<Node> Bitmap
+    {
+        get { return bitmap; }
+        set { bitmap = value; }
+    }
+    #endregion
     #region Methods
     public override void RunManager()
     {
-        bitmap = gameManager.grid;
         int seed = gameManager.seed;
         int smoothness = gameManager.smoothness;
         noise = new PerlinNoise(seed);
@@ -43,7 +49,7 @@ public class TerrainManager : Manager
         bitmap = GenerateTreesandRocks(bitmap, seed, smoothness);
 
         gameManager.validSpawnPoints = GetSpawnPoints(bitmap, smoothness);
-        player.transform.position = SetPlayerPosition(bitmap);
+        player.transform.position = SetPlayerPosition();
     }
     private Grid<Node> LoadBitmap(Grid<Node> bitmap, int startX, int startY, int endX, int endY, string binaryValue)
     {
@@ -116,7 +122,7 @@ public class TerrainManager : Manager
         }
         return spawnPoints;
     }
-    private Vector3 SetPlayerPosition(Grid<Node> bitmap)
+    public Vector3 SetPlayerPosition()
     {
         System.Random random = new System.Random();
         Node spawnNode = bitmap.GetGridObject(0, 0);

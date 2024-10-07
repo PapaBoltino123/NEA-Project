@@ -218,7 +218,7 @@ MonoBehaviour:
   collisions: {fileID: 717682612}
   waterLevel: 15
   gameManager: {fileID: 1623383060}
-  player: {fileID: 1584742705}
+  player: {fileID: 0}
 --- !u!4 &15143047
 Transform:
   m_ObjectHideFlags: 0
@@ -759,6 +759,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   terrainManager: {fileID: 15143046}
+  gameManager: {fileID: 0}
   tiles:
   - {fileID: 11400000, guid: 005c43aca550698458212913a114ea8a, type: 2}
   - {fileID: 11400000, guid: 7feac9c2699314440b9e8d71e28d941d, type: 2}
@@ -1121,6 +1122,7 @@ MonoBehaviour:
   seed: 14546
   smoothness: 50
   terrainManager: {fileID: 15143046}
+  player: {fileID: 1584742705}
 --- !u!4 &1623383061
 Transform:
   m_ObjectHideFlags: 0

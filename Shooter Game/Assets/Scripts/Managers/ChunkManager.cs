@@ -2,6 +2,7 @@ using System.Algorithms;
 using System.Algorithms.TerrainGeneration;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -19,107 +20,42 @@ public class ChunkManager : Manager
     #endregion
     #region Variable Declaration
     [SerializeField] TerrainManager terrainManager;
+    [SerializeField] TerrainManager gameManager;
     [SerializeField] TileBase[] tiles, rock, tree;
     [SerializeField] Tilemap ground, decoration, collisions;
     [SerializeField] private Player player;
-    private List<Chunk> totalChunks;
-    private CustomPriorityQueue<Chunk> loadedChunks; 
     private int chunkWidth = 64;
-    private int chunkHeight = 128;
     #endregion
     #region Methods
-    private void Awake()
-    {
-        totalChunks = new List<Chunk>();
-        for (int i = 0; i < 131072 / chunkWidth; i++)
-        {
-            totalChunks.Add(new Chunk(chunkWidth, chunkHeight, terrainManager.bitmap, (chunkWidth * i), chunkWidth + chunkWidth * (chunkWidth * i)));
-        }
-        loadedChunks = new CustomPriorityQueue<Chunk>(131072 / chunkWidth);
-    }
+
     private void Update()
     {
         RunManager();
     }
     public override void RunManager()
     {
-        int playerX = terrainManager.bitmap.GetXY(player.transform.position).x;
-        int currentChunkIndex = playerX / chunkWidth;
-        int nextChunkIndexLeft = currentChunkIndex - 1;
-        int nextChunkIndexRight = currentChunkIndex + 1;
-
-        LoadChunks(currentChunkIndex, nextChunkIndexLeft, nextChunkIndexRight);
-        RenderTilesInLoadedChunks();
-        RemoveTilesFromUnloadedChunks();
+        (int x, int y) playerCoordinates = terrainManager.bitmap.GetXY(player.transform.position);
+        int minX = playerCoordinates.x - chunkWidth / 2; int maxX = playerCoordinates.x + chunkWidth / 2;
+        RenderTiles(terrainManager.bitmap, minX, maxX);
     }
-    private void LoadChunks(int currentIndex, int leftIndex, int rightIndex)
+    private void RemoveTiles(Grid<Node> bitmap, Tilemap ground, Tilemap decorations, Tilemap collisions, int lowerX, int upperX)
     {
-        loadedChunks.Clear();
-        totalChunks[currentIndex].Index = currentIndex;
-
-        if (currentIndex >= 0 && currentIndex < totalChunks.Count)
+        for (int y = 0; y < bitmap.Height; y++)
         {
-            loadedChunks.Enqueue(totalChunks[currentIndex], 0);
-        }
-
-        if (leftIndex >= 0 && leftIndex < totalChunks.Count)
-        {
-            loadedChunks.Enqueue(totalChunks[leftIndex], 1);
-        }
-
-        if (rightIndex >= 0 && rightIndex < totalChunks.Count)
-        {
-            loadedChunks.Enqueue(totalChunks[rightIndex], 1);
-        }
-
-        AdjustLoadedChunksToPowerOfTwo();
-    }
-    private void AdjustLoadedChunksToPowerOfTwo()
-    {
-        int loadedCount = loadedChunks.Count;
-        int powerOfTwo = Mathf.NextPowerOfTwo(loadedCount);
-
-        while (loadedChunks.Count > powerOfTwo)
-        {
-            loadedChunks.Dequeue();
+            ground.SetTile(new Vector3Int(lowerX, y), null);
+            decorations.SetTile(new Vector3Int(lowerX, y), null);
+            collisions.SetTile(new Vector3Int(lowerX, y), null);
+            ground.SetTile(new Vector3Int(upperX, y), null);
+            decorations.SetTile(new Vector3Int(upperX, y), null);
+            collisions.SetTile(new Vector3Int(upperX, y), null);
         }
     }
-    private void RenderTilesInLoadedChunks()
+    private void RenderTiles(Grid<Node> bitmap, int minX, int maxX)
     {
-        foreach (var chunk in loadedChunks.ToList())
+        for (int x = minX; x < maxX; x++)
         {
-            RenderTiles(chunk, ground, decoration, collisions);
-        }
-    }
-    private void RemoveTilesFromUnloadedChunks()
-    {
-        foreach (var chunk in totalChunks)
-        {
-            if (!loadedChunks.ToList().Contains(chunk))
+            for (int y = 0; y < bitmap.Height; y++)
             {
-                RemoveTiles(chunk, ground, decoration, collisions);
-            }
-        }
-    }
-    private void RemoveTiles(Chunk chunk, Tilemap ground, Tilemap decorations, Tilemap collisions)
-    {
-        foreach (var tile in chunk.Tiles)
-        {
-            ground.SetTile(new Vector3Int(tile.x, tile.y), null);
-            collisions.SetTile(new Vector3Int(tile.x, tile.y), null);
-            decorations.SetTile(new Vector3Int(tile.x, tile.y), null);
-        }
-
-        chunk.Tiles.Clear();
-    }
-    private void RenderTiles(Chunk chunk, Tilemap ground, Tilemap decorations, Tilemap collisions)
-    {
-        for (int initialX = 0; initialX < chunk.Width; initialX++)
-        {
-            for (int initialY = 0; initialY < chunk.Height; initialY++)
-            {
-                int x = initialX + (initialX * chunk.Width); 
-                int y = initialY + (initialY * chunk.Height);
                 Node node = terrainManager.bitmap.GetGridObject(x, y);
 
                 if (ground.GetTile(new Vector3Int(x, y)) == null)
