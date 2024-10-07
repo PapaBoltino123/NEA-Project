@@ -98,7 +98,6 @@
         }
     }
 }
-
 namespace System.Algorithms.TerrainGeneration
 {
     class PerlinNoise
@@ -141,7 +140,6 @@ namespace System.Algorithms.TerrainGeneration
         }
     }
 }
-
 namespace System.Algorithms.Pathfinding
 {
     class CustomStack<T>

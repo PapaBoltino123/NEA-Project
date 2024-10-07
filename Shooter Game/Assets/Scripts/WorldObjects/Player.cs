@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -13,6 +14,18 @@ public class Player : Actor
     Rigidbody2D rb = new Rigidbody2D();
     Animator anim = new Animator();
     bool isJumping;
+    private float moveInput = 0;
+
+    public float MoveInput
+    {
+        get
+        {
+            if (moveInput == 0)
+                return 1;
+            else
+                return moveInput;
+        }
+    }
 
     private void Start()
     {
@@ -22,8 +35,12 @@ public class Player : Actor
     private void Update()
     {
         weaponController.SetBool("display axe", true);
-        float moveInput = Input.GetAxisRaw("Horizontal");
-        Move(moveInput, speed, rb, anim);
+        float input = Input.GetAxisRaw("Horizontal");
+        if (input > 0)
+            moveInput = input;
+        else if (input < 0)
+            moveInput = input;
+        Move(input, speed, rb, anim);
         bool isGrounded = Physics2D.Raycast(transform.position, Vector2.down, 0.1f, groundLayer);
 
         if (isGrounded == true)
