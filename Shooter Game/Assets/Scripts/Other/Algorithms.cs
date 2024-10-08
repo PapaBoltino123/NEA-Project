@@ -13,7 +13,9 @@ namespace System.Algorithms
         public (int parentX, int parentY) parentCoordinates;
         public int status;
         public int jumpLength;
-        private string binaryValue;
+        private string tileData;
+        private int rockTileType;
+        private int treeTileType;
         #endregion
         #region Constructor
         public Node(Grid<Node> grid, int x, int y)
@@ -26,19 +28,44 @@ namespace System.Algorithms
             this.parentCoordinates = (0, 0);
             this.status = 0;
             this.jumpLength = 0;
-            this.binaryValue = "";
+            this.tileData = "";
+            this.rockTileType = 100;
+            this.treeTileType = 100;
+            this.IsRock = false;
+            this.IsTree = false;
         }
         #endregion 
         #region Properties
-        public string BinaryValue
+        public string TileData
         {
-            get { return this.binaryValue; }
+            get { return this.tileData; }
             set
             {
-                this.binaryValue = value;
+                this.tileData = value;
                 UpdateNode();
             }
         }
+        public int RockTileType
+        {
+            get { return this.rockTileType; }
+            set
+            {
+                this.rockTileType = value;
+                UpdateNode();
+            }
+        }
+        public int TreeTileType
+        {
+            get { return this.treeTileType; }
+            set
+            {
+                this.treeTileType = value;
+                UpdateNode();
+            }
+        }
+        public bool IsRock { get; private set; }
+        public bool IsTree { get; private set; }
+
         #endregion
         #region Methods
         public Node UpdateStatus(int newStatus)
@@ -50,6 +77,21 @@ namespace System.Algorithms
         private void UpdateNode()
         {
             this.grid.SetGridObject(this.x, this.y, this);
+            if (this.tileData == "0111")
+            {
+                this.IsTree = true;
+                this.IsRock = false;
+            }
+            else if (this.tileData == "1000")
+            {
+                this.IsRock = true;
+                this.IsTree = false;
+            }
+            else
+            {
+                this.IsRock = false;
+                this.IsTree = false;
+            }
         }
         #endregion
     }

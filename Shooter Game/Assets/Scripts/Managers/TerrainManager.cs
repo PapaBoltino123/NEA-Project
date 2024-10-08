@@ -1,93 +1,81 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Tilemaps;
-using System.Linq;
 using System.Algorithms;
 using System.Algorithms.TerrainGeneration;
+using System.Net;
+using Unity.Jobs;
+using Unity.Mathematics;
+using static UnityEditor.PlayerSettings.WSA;
+using UnityEngine.Tilemaps;
+using System.Linq;
+using Unity.VisualScripting.Antlr3.Runtime.Tree;
 
-public class TerrainManager : Manager
+public class TerrainManager : MonoBehaviour
 {
     #region Variable Declaration
-    [SerializeField] TileBase[] tiles, rock, tree;
-    [SerializeField] Tilemap ground, decoration, collisions;
-    public Grid<Node> bitmap;
-    [SerializeField] int waterLevel;
-    [SerializeField] GameManager gameManager;
-    [SerializeField] Player player;
-    PerlinNoise noise;
-    int minX; int maxX;
-    #endregion
-    #region Constant Declaration
-    private const string SKY = "0000"; 
-    private const string DIRT = "0001";
-    private const string STONE = "0010"; 
-    private const string WATER = "0011";
-    private const string FLOWERS = "0100"; 
-    private const string LILYPADS = "0101";
-    private const string GRASS = "0110"; 
-    private const string ROCK = "0111";
-    private const string TREE = "1000";
-    #endregion
-    #region Properties
-    public Grid<Node> Bitmap
-    {
-        get { return bitmap; }
-        set { bitmap = value; }
-    }
+    [SerializeField] int seed, smoothness, waterLevel;
+    [SerializeField] TileBase[] mainTiles, treeTiles, rockTiles;
+
+    [NonSerialized] public int chunkWidth = 64;
+    [NonSerialized] public int chunkHeight = 128;
+    [NonSerialized] public int worldWidth = 131072;
+    [NonSerialized] public int worldHeight = 128;
+    [NonSerialized] public int[] surfaceHeights;
+
+    private PerlinNoise perlinNoise;
+    private Grid<Node> map;
+    private float cellSize = 0.16f;
+    private List<Node> rockList;
+    private List<Node> treeList;
     #endregion
     #region Methods
-    public override void RunManager()
+    private void Awake()
     {
-        int seed = gameManager.seed;
-        int smoothness = gameManager.smoothness;
-        noise = new PerlinNoise(seed);
-        bitmap = LoadBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, SKY);
-        bitmap = GenerateGround(bitmap, seed, smoothness);
-        bitmap = GenerateWater(bitmap, seed);
-        bitmap = GeneratePlants(bitmap, seed, smoothness);
-        bitmap = GenerateTreesandRocks(bitmap, seed, smoothness);
+        seed = SetSeed();
+        Initialize();
+    }
+    private static int SetSeed()
+    {
+        System.Random rng = new System.Random();
+        int seed = rng.Next(-10000, 10000);
+        return seed;
+    }
+    private void Initialize()
+    {
+        map = new Grid<Node>(worldWidth, worldHeight, cellSize, (Grid<Node> g, int x, int y) => new Node(g, x, y));
+        perlinNoise = new PerlinNoise(seed);
+        surfaceHeights = new int[worldWidth];
+        rockList = new List<Node>();
+        treeList = new List<Node>();
+        LoadMapData(0, 0, worldWidth, worldHeight, TileType.SKY);
+        GenerateWorld();
+    }
+    private void GenerateWorld()
+    {
+        System.Random rng = new System.Random(seed);
+        #region Generate Ground
+        for (int x = 0; x < worldWidth; x++)
+        {
+            double n = System.Math.Round((double)x / 10, 2);
+            int perlinHeight = Convert.ToInt32(perlinNoise.GenerateNoise(n / smoothness) * worldHeight) + 12;
+            surfaceHeights[x] = perlinHeight;
 
-        gameManager.validSpawnPoints = GetSpawnPoints(bitmap, smoothness);
-        player.transform.position = SetPlayerPosition();
-    }
-    private Grid<Node> LoadBitmap(Grid<Node> bitmap, int startX, int startY, int endX, int endY, string binaryValue)
-    {
-        for (int x = startX; x < endX; x++)
-        {
-            for (int y = startY; y < endY; y++)
-            {
-                Node node = bitmap.GetGridObject(x, y);
-                node.BinaryValue = binaryValue;
-            }
+            LoadMapData(x, 0, x + 1, perlinHeight, TileType.DIRT);
+            LoadMapData(x, perlinHeight - 1, x + 1, perlinHeight, TileType.GRASS);
+            LoadMapData(x, 0, x + 1, perlinHeight - 10 - rng.Next(1, 4), TileType.STONE);
         }
-        return bitmap;
-    }
-    private Grid<Node> GenerateGround(Grid<Node> bitmap, int seed, int smoothness)
-    {
-        for (int x = 0; x < bitmap.Width; x++)
-        {
-            System.Random random = new System.Random(seed);
-            double n = System.Math.Round((double)x / 10, 1);
-            int perlinHeight = Convert.ToInt32(noise.GenerateNoise(n / smoothness) * bitmap.Height) + 12;
-            bitmap = LoadBitmap(bitmap, x, 0, x+1, perlinHeight, DIRT);
-            bitmap = LoadBitmap(bitmap, x, perlinHeight - 1, x + 1, perlinHeight, GRASS);
-            bitmap = LoadBitmap(bitmap, x, 0, x + 1, perlinHeight - 10 - random.Next(1, 4), STONE);
-        }
-        return bitmap;
-    }
-    private Grid<Node> GenerateWater(Grid<Node> bitmap, int seed)
-    {
+        #endregion
+        #region Generate Water
         int count = 0; int xCoord = 0;
-        System.Random random = new System.Random(seed);
+        var gapLengths = new List<(int xCoord, int count)>();
 
-        var gapLengths = new List<(int, int)>();
-
-        for (int x = 0; x < bitmap.Width; x++)
+        for (int x = 0; x < worldWidth; x++)
         {
-            if (bitmap.GetGridObject(x, waterLevel).BinaryValue == SKY)
+            if (map.GetGridObject(x, waterLevel).TileData == GetTileData(TileType.SKY))
             {
-                if (x > 0 && (bitmap.GetGridObject(x - 1, waterLevel).BinaryValue == DIRT || bitmap.GetGridObject(x - 1, waterLevel).BinaryValue == STONE || bitmap.GetGridObject(x - 1, waterLevel).BinaryValue == GRASS))
+                if (x > 0 && (map.GetGridObject(x - 1, waterLevel).TileData == GetTileData(TileType.DIRT) || map.GetGridObject(x - 1, waterLevel).TileData == GetTileData(TileType.STONE) || map.GetGridObject(x - 1, waterLevel).TileData == GetTileData(TileType.GRASS)))
                     xCoord = x;
                 count++;
             }
@@ -98,68 +86,23 @@ public class TerrainManager : Manager
                 count = 0;
             }
         }
-        foreach ((int, int) gap in  gapLengths)
+        foreach (var gap in gapLengths)
         {
-            if (gap.Item2 >= 3 && gap.Item2 <= 35)
+            if (gap.count >= 3 && gap.count <= 35)
             {
-                bitmap = LoadBitmap(bitmap, gap.Item1, waterLevel - 6, gap.Item1 + gap.Item2, waterLevel, WATER);
-                bitmap = LoadBitmap(bitmap, gap.Item1, 12 - random.Next(1, 3), gap.Item1 + gap.Item2, waterLevel - 6, DIRT);
+                LoadMapData(gap.xCoord, waterLevel - 6, gap.xCoord + gap.count, waterLevel, TileType.WATER);
+                LoadMapData(gap.Item1, 12 - rng.Next(1, 3), gap.Item1 + gap.Item2, waterLevel - 6, TileType.DIRT);
             }
         }
-        return bitmap;
-    }
-    private List<Node> GetSpawnPoints(Grid<Node> bitmap, int smoothness)
-    {
-        List<Node> spawnPoints = new List<Node>();
-        for (int x = 0; x < bitmap.Width; x++)
-        {
-            if (bitmap.GetGridObject(x, waterLevel - 4).BinaryValue != WATER)
-            {
-                double n = System.Math.Round((double)x / 10, 1);
-                int perlinHeight = Convert.ToInt32(noise.GenerateNoise(n / smoothness) * bitmap.Height) + 12;
-                spawnPoints.Add(new Node(bitmap, x, perlinHeight));
-            }
-        }
-        return spawnPoints;
-    }
-    public Vector3 SetPlayerPosition()
-    {
-        System.Random random = new System.Random();
-        Node spawnNode = bitmap.GetGridObject(0, 0);
-        int n;
-
-        bool isNotSpawnable = true;
-        do
-        {
-            n = random.Next(40000, 60000);
-
-            for (int i = 0; i < gameManager.validSpawnPoints.Count; i++)
-            {
-                if (gameManager.validSpawnPoints[i].x == n)
-                {
-                    spawnNode = gameManager.validSpawnPoints[i];
-                    isNotSpawnable = false;
-                    break;
-                }
-            }
-        } while (isNotSpawnable == true);
-
-        Vector3 spawnPosition = bitmap.GetWorldPosition(spawnNode.x, spawnNode.y);
-        return new Vector3(spawnPosition.x + 0.08f, spawnPosition.y + 0.3f);
-    }
-    private Grid<Node> GeneratePlants(Grid<Node> bitmap, int seed, int smoothness)
-    {
-        System.Random random = new System.Random(seed);
+        #endregion
+        #region Generate Plants
         bool isWater = false;
         int plantChance;
-
-        for (int x = 0; x < bitmap.Width; x++)
+        for (int x = 0; x < worldWidth; x++)
         {
-            plantChance = random.Next(1, 5);
-            double n = System.Math.Round((double)x / 10, 1);
-            int perlinHeight = Convert.ToInt32(noise.GenerateNoise(n / smoothness) * bitmap.Height) + 12;
+            plantChance = rng.Next(1, 5);
 
-            if (bitmap.GetGridObject(x, waterLevel - 3).BinaryValue == WATER)
+            if (map.GetGridObject(x, waterLevel - 3).TileData == GetTileData(TileType.WATER))
                 isWater = true;
             else
                 isWater = false;
@@ -167,36 +110,26 @@ public class TerrainManager : Manager
             if (plantChance == 4)
             {
                 if (isWater == true)
-                    bitmap = LoadBitmap(bitmap, x, waterLevel - 1, x + 1, waterLevel, LILYPADS);
-                if (isWater == false)
-                    bitmap = LoadBitmap(bitmap, x, perlinHeight, x + 1, perlinHeight + 1, FLOWERS);
+                    LoadMapData(x, waterLevel - 1, x + 1, waterLevel, TileType.LILYPAD);
+                else if (isWater == false)
+                    LoadMapData(x, surfaceHeights[x], x + 1, surfaceHeights[x] + 1, TileType.FLOWER);
             }
         }
-        return bitmap;
-    }
-    private Grid<Node> GenerateTreesandRocks(Grid<Node> bitmap, int seed, int smoothness)
-    {
-        System.Random random = new System.Random(seed);
-        int xCoord = 0;
-        List<int> perlinHeights = new List<int>();
-        var gapLengths = new List<(int, int)>();
+        #endregion
+        #region Generate Trees and Rocks
+        xCoord = 0;
+        gapLengths.Clear(); 
 
-        for (int x = 0; x < bitmap.Width; x++)
-        {
-            double n = System.Math.Round((double)x / 10, 1);
-            int perlinHeight = Convert.ToInt32(noise.GenerateNoise(n / smoothness) * bitmap.Height) + 12;
-            perlinHeights.Add(perlinHeight);
-        }
-        for (int x = 0; x < perlinHeights.Count; x++)
+        for (int x = 0; x < surfaceHeights.Length; x++)
         {
             if (x > 0)
             {
-                if (perlinHeights[x - 1] != perlinHeights[x])
+                if (surfaceHeights[x - 1] != surfaceHeights[x])
                 {
                     xCoord = x;
                 }
             }
-            if (x < perlinHeights.Count)
+            if (x < surfaceHeights.Length)
             {
                 try
                 {
@@ -213,53 +146,139 @@ public class TerrainManager : Manager
         {
             try
             {
-                (int, int)[] temp = gapLengths.ToArray();
-                temp[i].Item2 = temp[i + 1].Item1 - temp[i].Item1;
+                (int xCoord, int count)[] temp = gapLengths.ToArray();
+                temp[i].count = temp[i + 1].xCoord - temp[i].xCoord;
                 gapLengths = temp.ToList();
             }
             catch
             {
-                (int, int)[] temp = gapLengths.ToArray();
-                temp[i].Item2 = perlinHeights.Count - temp[i].Item1;
+                (int xCoord, int count)[] temp = gapLengths.ToArray();
+                temp[i].count = surfaceHeights.Length - temp[i].xCoord;
                 gapLengths = temp.ToList();
             }
         }
         for (int x = 0; x < gapLengths.Count; x++)
         {
-            bool isWater = false;
+            isWater = false;
             for (int i = gapLengths[x].Item1; i < gapLengths[x].Item1 + gapLengths[x].Item2; i++)
             {
-                if (bitmap.GetGridObject(i, waterLevel - 2).BinaryValue == WATER)
+                if (map.GetGridObject(i, waterLevel - 2).TileData == GetTileData(TileType.WATER))
                 {
                     isWater = true;
                 }
             }
             if (isWater == false)
             {
-                if (gapLengths[x].Item2 >= 6 && gapLengths[x].Item2 < 9)
+                if (gapLengths[x].count >= 6 && gapLengths[x].count < 9)
                 {
-                    int midpoint = gapLengths[x].Item1 + gapLengths[x].Item2 / 2 + 1;
-                    int chance = random.Next(1, 8);
+                    int midpoint = gapLengths[x].xCoord + gapLengths[x].count / 2 + 1;
+                    int chance = rng.Next(1, 8);
 
                     if (chance != 5)
                     {
-                        bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1], midpoint + 2, perlinHeights[gapLengths[x].Item1] + 3, ROCK);
-                        bitmap = LoadBitmap(bitmap, midpoint - 1, perlinHeights[gapLengths[x].Item1] + 3, midpoint + 2, perlinHeights[gapLengths[x].Item1] + 4, ROCK);
-                        bitmap = LoadBitmap(bitmap, midpoint - 1, perlinHeights[gapLengths[x].Item1] + 4, midpoint + 1, perlinHeights[gapLengths[x].Item1] + 5, ROCK);
+                        LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord], midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 3, TileType.ROCK);
+                        LoadMapData(midpoint - 1, surfaceHeights[gapLengths[x].xCoord] + 3, midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 4, TileType.ROCK);
+                        LoadMapData(midpoint - 1, surfaceHeights[gapLengths[x].xCoord] + 4, midpoint + 1, surfaceHeights[gapLengths[x].xCoord] + 5, TileType.ROCK);
                     }
                 }
-                else if (gapLengths[x].Item2 >= 9)
+                else if (gapLengths[x].count >= 9)
                 {
-                    int midpoint = gapLengths[x].Item1 + gapLengths[x].Item2 / 2;
+                    int midpoint = gapLengths[x].xCoord + gapLengths[x].count / 2;
 
-                    bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1], midpoint + 3, perlinHeights[gapLengths[x].Item1] + 1, TREE);
-                    bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1] + 1, midpoint + 2, perlinHeights[gapLengths[x].Item1] + 2, TREE);
-                    bitmap = LoadBitmap(bitmap, midpoint - 3, perlinHeights[gapLengths[x].Item1] + 2, midpoint + 4, perlinHeights[gapLengths[x].Item1] + 5, TREE);
-                    bitmap = LoadBitmap(bitmap, midpoint - 2, perlinHeights[gapLengths[x].Item1] + 5, midpoint + 3, perlinHeights[gapLengths[x].Item1] + 6, TREE);
+                    LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord], midpoint + 3, surfaceHeights[gapLengths[x].xCoord] + 1, TileType.TREE);
+                    LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord] + 1, midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 2, TileType.TREE);
+                    LoadMapData(midpoint - 3, surfaceHeights[gapLengths[x].xCoord] + 2, midpoint + 4, surfaceHeights[gapLengths[x].xCoord] + 5, TileType.TREE);
+                    LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord] + 5, midpoint + 3, surfaceHeights[gapLengths[x].xCoord] + 6, TileType.TREE);
                 }
             }
         }
-        return bitmap;
+        #endregion
+    }
+    private string GetTileData(TileType tileType)
+    {
+        switch (tileType)
+        {
+            case TileType.SKY:
+                return "0000";
+            case TileType.STONE:
+                return "0001";
+            case TileType.DIRT:
+                return "0010";
+            case TileType.GRASS:
+                return "0011";
+            case TileType.WATER:
+                return "0100";
+            case TileType.LILYPAD:
+                return "0101";
+            case TileType.FLOWER:
+                return "0110";
+            case TileType.TREE:
+                return "0111";
+            case TileType.ROCK:
+                return "1000";
+            default:
+                return null;
+        }
+    }
+    private void LoadMapData(int startX, int startY, int endX, int endY, TileType tileType)
+    {
+        for (int x = startX; x < endX; x++)
+        {
+            for (int y = startY; y < endY; y++)
+            {
+                Node node = map.GetGridObject(x, y);
+                node.TileData = GetTileData(tileType);
+            }
+        }
+    }
+    #endregion
+    #region Enumerators
+    public IEnumerator GenerateChunk(Chunk chunk)
+    {
+        for (int w = 0; w < chunkWidth; w++)
+        {
+            for (int h = 0; h < chunkHeight; h++)
+            {
+                Vector3Int tilePosition = new Vector3Int(chunk.Position.x + w, chunk.Position.y + h, 0);
+                if ((tilePosition.x < 0 || tilePosition.x >= worldWidth) || tilePosition.y < 0 || tilePosition.y >= worldHeight)
+                    continue;
+
+                chunk.SetChunkTile(tilePosition, TileMapType.GROUND, );
+                chunk.SetChunkTile
+                chunk.SetChunkTile
+                chunk.SetChunkTile
+            }
+        }
+    }
+    private TileBase ReturnTile(Node node)
+    {
+        if (node.TileData == "0000")
+            return mainTiles[0];
+        else if (node.TileData == "0001")
+            return mainTiles[1];
+        else if (node.TileData == "0010")
+            return mainTiles[2];
+        else if (node.TileData == "0011")
+            return mainTiles[3];
+        else if (node.TileData == "0100")
+            return mainTiles[4];
+        else if (node.TileData == "0101")
+            return mainTiles[5];
+        else if (node.TileData == "0110")
+            return mainTiles[6];
+        else if (node.TileData == "0111")
+        {
+            treeList.Add(node);
+            return 
+        }
+    }
+    private TileBase AssignTreeTiles()
+    {
+        for (int i = 0; i < treeList.Count; i++)
+        {
+            Node node = treeList[i];
+            node.TreeTileType = i;
+        }
     }
     #endregion
 }

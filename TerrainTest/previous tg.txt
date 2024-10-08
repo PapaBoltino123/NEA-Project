@@ -152,3 +152,38 @@ public class ChunkManager : Manager
     }
     #endregion
 }
+ private List<Node> GetSpawnPoints(Grid<Node> bitmap, int smoothness)
+    {
+        List<Node> spawnPoints = new List<Node>();
+        for (int x = 0; x < bitmap.Width; x++)
+        {
+            if (bitmap.GetGridObject(x, waterLevel - 4).BinaryValue != WATER)
+            {
+                double n = System.Math.Round((double)x / 10, 1);
+                int perlinHeight = Convert.ToInt32(noise.GenerateNoise(n / smoothness) * bitmap.Height) + 12;
+                spawnPoints.Add(new Node(bitmap, x, perlinHeight));
+            }
+        }
+        return spawnPoints;
+    }
+    public Vector3 SetPlayerPosition()
+    {
+        System.Random random = new System.Random();
+        Node spawnNode = bitmap.GetGridObject(0, 0);
+        int n;
+
+        bool isNotSpawnable = true;
+        do
+        {
+            n = random.Next(40000, 60000);
+
+            for (int i = 0; i < gameManager.validSpawnPoints.Count; i++)
+            {
+                if (gameManager.validSpawnPoints[i].x == n)
+                {
+                    spawnNode = gameManager.validSpawnPoints[i];
+                    isNotSpawnable = false;
+                    break;
+                }
+            }
+        } while (isNotSpawnable == true);
