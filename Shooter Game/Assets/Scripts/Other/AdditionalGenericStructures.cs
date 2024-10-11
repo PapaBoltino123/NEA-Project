@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace System.AdditionalDataStructures
@@ -292,88 +293,6 @@ namespace System.AdditionalDataStructures
             else
                 return false;
         }
-        #endregion
-    }
-    public class CustomHashTable
-    {
-        #region Variable Declaration
-        private dynamic[] elements;
-        private int capacity;
-        #endregion
-        #region Constructor
-        public CustomHashTable(int capacity)
-        {
-            this.capacity = capacity;
-            elements = new dynamic[capacity];
-        }
-        #endregion
-        #region Properties
-        public int Capacity
-        {
-            get { return this.capacity; }
-            set { this.capacity = value; }
-        }
-        #endregion
-        #region Methods
-        public void Add(dynamic item)
-        {
-            string hashkey = item.hashkey;
-            int hashVal = GetHashValue(hashkey);
-
-            if (elements[hashVal] != null && elements[hashVal].hashkey == item.hashkey)
-            {
-                Update(item);
-            }
-            else
-            {
-                Debug.Log("Item has been added to Hash Table");
-                elements[hashVal] = item;
-            }
-        }
-        public void Update(dynamic item)
-        {
-            string hashkey = item.hashkey;
-            int hashVal = GetHashValue(hashkey);
-
-            if (elements[hashVal] != null && elements[hashVal].hashkey == item.hashkey)
-            {
-                Debug.Log("Hash Table has been updated");
-                if (item.InventoryObjectType == WEAPON)
-                    Debug.Log("Update weapon in some way");
-                else if (item.InventoryObjectType == ITEM)
-                {
-                    elements[hashVal].Count += item.count;
-                }
-            }
-        }
-        public List<dynamic> ToList()
-        {
-            return elements;
-        }
-        private int GetHashValue(string hashkey)
-        {
-            if (hashkey != "")
-            {
-                int hashVal = 0;
-                for (int i = 0; i < hashkey.Length; i++)
-                {
-                    char c = hashkey[i];
-                    hashVal += (c * i);
-                }
-                hashVal = hashVal % capacity;
-                return hashVal;
-            }
-            else
-                throw new Exception("There is no readable hashkey within this item");
-        }
-        #endregion
-    }
-    public enum InventoryObjectType
-    {
-        #region Variables Declaration
-        DEFAULT,
-        WEAPON,
-        ITEM
         #endregion
     }
 }
