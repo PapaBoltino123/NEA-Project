@@ -5,13 +5,11 @@ using UnityEngine;
 using System.AdditionalDataStructures;
 using System.Algorithms.TerrainGeneration;
 
-public class ChunkManager : MonoBehaviour
+public class ChunkManager : Singleton<ChunkManager>
 {
     #region Variables Declaration
     [SerializeField] private GameObject chunkPrefab;
     [SerializeField] private GameObject chunkRoot;
-    [SerializeField] private Player player;
-    [SerializeField] private TerrainManager terrainManager;
     [SerializeField] LayerMask chunkLayer;
     private bool isUpdatingChunks = false;
     [NonSerialized] public List<Node> validSpawnPoints;
@@ -23,12 +21,14 @@ public class ChunkManager : MonoBehaviour
     #region Methods
     private void Start()
     {
-        validSpawnPoints = terrainManager.ValidSpawns();
-        playerSpawnPosition = terrainManager.SetPlayerPosition(validSpawnPoints);
+        validSpawnPoints = TerrainManager.Instance.ValidSpawns();
+        playerSpawnPosition = TerrainManager.Instance.SetPlayerPosition(validSpawnPoints);
         chunksToLoad = new List<Chunk>();
 
         StartCoroutine(LoadChunks());
         StartCoroutine(UnloadChunks());
+
+        Player.Instance.transform.position = playerSpawnPosition;
     }
     public void ClearAllChunks()
     {
@@ -64,10 +64,10 @@ public class ChunkManager : MonoBehaviour
         Vector3 regionStart = playerSpawnPosition + Vector3.left * LEFTRANGE;
         Vector3 regionEnd = playerSpawnPosition + Vector3.right * RIGHTRANGE;
 
-        int startX = (int)regionStart.x / terrainManager.chunkWidth;
-        int startY = (int)regionStart.y / terrainManager.chunkHeight;
-        int endX = ((int)regionEnd.x + terrainManager.chunkWidth) / terrainManager.chunkWidth;
-        int endY = ((int)regionEnd.y + terrainManager.chunkHeight) / terrainManager.chunkHeight;
+        int startX = (int)regionStart.x / TerrainManager.Instance.chunkWidth;
+        int startY = (int)regionStart.y / TerrainManager.Instance.chunkHeight;
+        int endX = ((int)regionEnd.x + TerrainManager.Instance.chunkWidth) / TerrainManager.Instance.chunkWidth;
+        int endY = ((int)regionEnd.y + TerrainManager.Instance.chunkHeight) / TerrainManager.Instance.chunkHeight;
 
         return new Rect(startX, startY, endX - startX, endY - startY);
     }
@@ -100,11 +100,11 @@ public class ChunkManager : MonoBehaviour
         {
             for (int h = (int)loadBoundaries.yMax; h >= (int)loadBoundaries.yMin; h--)
             {
-                if (w < 0 || w >= terrainManager.worldWidth / terrainManager.chunkWidth || h < 0 || h >= terrainManager.worldHeight / terrainManager.chunkHeight)
+                if (w < 0 || w >= TerrainManager.Instance.worldWidth / TerrainManager.Instance.chunkWidth || h < 0 || h >= TerrainManager.Instance.worldHeight / TerrainManager.Instance.chunkHeight)
                     continue;
 
                 Vector3Int chunkPosition = new Vector3Int(w, h, 0);
-                Vector3Int worldPosition = new Vector3Int(w * terrainManager.chunkWidth, h * terrainManager.chunkHeight, 0);
+                Vector3Int worldPosition = new Vector3Int(w * TerrainManager.Instance.chunkWidth, h * TerrainManager.Instance.chunkHeight, 0);
 
                 if (loadBoundaries.Contains(chunkPosition) && GetChunk(worldPosition) == false)
                 {

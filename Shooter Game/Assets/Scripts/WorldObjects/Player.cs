@@ -5,7 +5,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class Player : Actor
+public class Player : Singleton<Player>, Actor
 {
     [SerializeField] float jumpForce, speed;
     [SerializeField] LayerMask groundLayer;
@@ -55,9 +55,25 @@ public class Player : Actor
     {
         if (isJumping == true)
         {
-            Jump(jumpForce, rb);
             anim.SetBool("grounded", false);
             isJumping = false;
         }
+    }
+    public void Move(float moveInput, float speed, Rigidbody2D rb, Animator anim)
+    {
+        rb.velocity = new Vector3(moveInput * speed, rb.velocity.y);
+        if (moveInput > 0)
+        {
+            transform.localScale = Vector3.one;
+        }
+        if (moveInput < 0)
+        {
+            transform.localScale = new Vector3(-1, 1, 1);
+        }
+        anim.SetBool("run", moveInput != 0);
+    }
+    public void Jump(float jumpForce, Rigidbody2D rb)
+    {
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
     }
 }
