@@ -216,15 +216,6 @@ namespace System.AdditionalDataStructures
             else
                 return false;
         }
-        public bool CheckUnique(T item, int priority)
-        {
-            if (elements.Contains((item, priority)))
-            {
-                return false;
-            }
-            else
-                return true;
-        }
         public List<T> ToList()
         {
             List<T> returnList = new List<T>();
@@ -294,86 +285,63 @@ namespace System.AdditionalDataStructures
         }
         #endregion
     }
-    public class CustomHashTable
+    public class CustomQueue<T>
     {
-        #region Variable Declaration
-        private dynamic[] elements;
-        private int capacity;
+        #region Variables Declaration
+        private List<T> elements = new List<T>();
+        private int maxSize;
         #endregion
         #region Constructor
-        public CustomHashTable(int capacity)
+        public CustomQueue(int capacity)
         {
-            this.capacity = capacity;
-            elements = new dynamic[capacity];
+            maxSize = capacity;
         }
         #endregion
         #region Properties
-        public int Capacity
+        public int Count
         {
-            get { return this.capacity; }
-            set { this.capacity = value; }
+            get { return elements.Count; }
         }
         #endregion
         #region Methods
-        public void Add(dynamic item)
+        public void Enqueue(T item)
         {
-            string hashkey = item.hashkey;
-            int hashVal = GetHashValue(hashkey);
-
-            if (elements[hashVal] != null && elements[hashVal].hashkey == item.hashkey)
-            {
-                Update(item);
-            }
+            if (elements.Count == maxSize)
+                throw new Exception("The queue is full.");
             else
-            {
-                Debug.Log("Item has been added to Hash Table");
-                elements[hashVal] = item;
-            }
+                elements.Add(item);
         }
-        public void Update(dynamic item)
+        public T Dequeue()
         {
-            string hashkey = item.hashkey;
-            int hashVal = GetHashValue(hashkey);
+            if (IsEmpty() == true)
+                throw new Exception("The queue is empty.");
 
-            if (elements[hashVal] != null && elements[hashVal].hashkey == item.hashkey)
-            {
-                Debug.Log("Hash Table has been updated");
-                if (item.InventoryObjectType == WEAPON)
-                    Debug.Log("Update weapon in some way");
-                else if (item.InventoryObjectType == ITEM)
-                {
-                    elements[hashVal].Count += item.count;
-                }
-            }
+            var item = elements[0];
+            elements.RemoveAt(0);
+            return item;
         }
-        public List<dynamic> ToList()
+        public T Peek()
+        {
+            if (IsEmpty() == true)
+                throw new Exception("The queue is empty.");
+
+            return elements[0];
+        }
+        public bool IsEmpty()
+        {
+            if (elements.Count == 0)
+                return true;
+            else
+                return false;
+        }
+        public List<T> ToList()
         {
             return elements;
         }
-        private int GetHashValue(string hashkey)
+        public void Clear()
         {
-            if (hashkey != "")
-            {
-                int hashVal = 0;
-                for (int i = 0; i < hashkey.Length; i++)
-                {
-                    char c = hashkey[i];
-                    hashVal += (c * i);
-                }
-                hashVal = hashVal % capacity;
-                return hashVal;
-            }
-            else
-                throw new Exception("There is no readable hashkey within this item");
+            elements.Clear();
         }
-        #endregion
-    }
-    public enum InventoryObjectType
-    {
-        #region Variables Declaration
-        DEFAULT,
-        WEAPON,
-        ITEM
         #endregion
     }
 }
