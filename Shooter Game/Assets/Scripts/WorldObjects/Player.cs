@@ -11,7 +11,7 @@ public class Player : Singleton<Player>, Actor
     [SerializeField] LayerMask groundLayer;
     [SerializeField] Animator weaponController;
 
-    Rigidbody2D rb = new Rigidbody2D();
+    [NonSerialized] public Rigidbody2D rb = new Rigidbody2D();
     Animator anim = new Animator();
     bool isJumping;
     private float moveInput = 0;
@@ -56,6 +56,7 @@ public class Player : Singleton<Player>, Actor
         if (isJumping == true)
         {
             anim.SetBool("grounded", false);
+            Jump(jumpForce, rb);
             isJumping = false;
         }
     }

@@ -9,7 +9,7 @@ using UnityEngine.Tilemaps;
 public class Chunk : MonoBehaviour
 {
     #region Variable Declaration
-    [SerializeField] public Tilemap ground, decorations, groundCollisions, otherCollisions;
+    [SerializeField] public Tilemap ground, decorations, groundCollisions, otherCollisions, overrideGrassMap, overrideDirtMap;
     [SerializeField] TileBase[] mainTiles, treeTiles, rockTiles;
 
     private int chunkHeight;
@@ -49,6 +49,11 @@ public class Chunk : MonoBehaviour
         Destroy(gameObject);
         isUnloading = true;
     }
+    private void Update()
+    {
+        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        (int x, int y) coords = fullMap.GetXY(mousePosition);
+    }
     public IEnumerator PerformRenderChunk()
     {
         for (int x = 0; x < chunkWidth; x++)
@@ -61,10 +66,19 @@ public class Chunk : MonoBehaviour
                 TileBase decorationsTile = GetTile(node, TileMapType.DECORATIONS);
                 TileBase otherTile = GetTile(node, TileMapType.OTHER_COLLISIONS);
 
-                groundCollisions.SetTile(new Vector3Int(x, y), collisionsTile);
-                ground.SetTile(new Vector3Int(x, y), groundTile);
                 decorations.SetTile(new Vector3Int(x, y), decorationsTile);
+                ground.SetTile(new Vector3Int(x, y), groundTile);
+                groundCollisions.SetTile(new Vector3Int(x, y), collisionsTile);
                 otherCollisions.SetTile(new Vector3Int(x, y), otherTile);
+
+                if (node.TileData == "0010")
+                {
+                    overrideDirtMap.SetTile(new Vector3Int(x, y), mainTiles[2]);
+                }
+                else if (node.TileData == "0011")
+                {
+                    overrideGrassMap.SetTile(new Vector3Int(x, y), mainTiles[3]);
+                }
 
                 if (y % chunkHeight == 0)
                     yield return null;
@@ -75,7 +89,9 @@ public class Chunk : MonoBehaviour
     {
         if (tileMapType == TileMapType.GROUND)
         {
-            if (node.TileData == "0001")
+            if (node.TileData == "0000")
+                return mainTiles[0];
+            else if (node.TileData == "0001")
                 return mainTiles[1];
             else if (node.TileData == "0010")
                 return mainTiles[2];
@@ -83,15 +99,22 @@ public class Chunk : MonoBehaviour
                 return mainTiles[3];
             else if (node.TileData == "0100")
                 return mainTiles[4];
+            else if (node.TileData == "0110")
+                return mainTiles[0];
             else if (node.TileData == "0101")
                 return mainTiles[4];
-            else
+            else if (node.TileData == "0111")
                 return mainTiles[0];
+            else if (node.TileData == "1000")
+                return mainTiles[0];
+            else return null;   
         }
         else if (tileMapType == TileMapType.DECORATIONS)
         {
             if (node.TileData == "0110")
+            {
                 return mainTiles[6];
+            }
             else if (node.TileData == "0101")
                 return mainTiles[5];
             else if (node.TileData == "0111")
@@ -103,7 +126,7 @@ public class Chunk : MonoBehaviour
                 catch
                 {
                     Debug.Log($"Tree tile type: {node.TreeTileType}");
-                    throw new Exception("Tree won't fucking work");
+                    throw new Exception("Tree won't work");
                 }
             }
             else if (node.TileData == "1000")
@@ -115,7 +138,7 @@ public class Chunk : MonoBehaviour
                 catch
                 {
                     Debug.Log($"Tree tile type: {node.RockTileType}");
-                    throw new Exception("Rock won't fucking work");
+                    throw new Exception("Rock won't work");
                 }
             }
             else
@@ -128,7 +151,7 @@ public class Chunk : MonoBehaviour
             else if (node.TileData == "0010")
                 return mainTiles[2];
             else if (node.TileData == "0011")
-                return mainTiles[3];
+                return mainTiles[0];
             else if (node.TileData == "0101")
                 return mainTiles[5];
             else if (node.TileData == "1000")

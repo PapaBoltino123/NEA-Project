@@ -11,6 +11,7 @@ using static UnityEditor.PlayerSettings.WSA;
 using UnityEngine.Tilemaps;
 using System.Linq;
 using Unity.VisualScripting.Antlr3.Runtime.Tree;
+using UnityEngine.UIElements;
 
 public class TerrainManager : Singleton<TerrainManager>
 {
@@ -32,7 +33,8 @@ public class TerrainManager : Singleton<TerrainManager>
     #region Methods
     private void Awake()
     {
-        seed = SetSeed();
+        //seed = SetSeed();
+        seed = -359;
         Initialize();
     }
     private static int SetSeed()
@@ -59,9 +61,9 @@ public class TerrainManager : Singleton<TerrainManager>
             int perlinHeight = Convert.ToInt32(perlinNoise.GenerateNoise(n / smoothness) * worldHeight) + 12;
             surfaceHeights[x] = perlinHeight;
 
-            LoadMapData(x, 0, x + 1, perlinHeight, TileType.DIRT);
-            LoadMapData(x, perlinHeight - 1, x + 1, perlinHeight, TileType.GRASS);
-            LoadMapData(x, 0, x + 1, perlinHeight - 10 - rng.Next(1, 4), TileType.STONE);
+            LoadMapData(x, 0, x + 1, surfaceHeights[x] - 1, TileType.DIRT);
+            LoadMapData(x, surfaceHeights[x] - 1, x + 1, surfaceHeights[x], TileType.GRASS);
+            LoadMapData(x, 0, x + 1, surfaceHeights[x] - 10 - rng.Next(1, 4), TileType.STONE);
         }
         #endregion
         #region Generate Water
@@ -109,7 +111,9 @@ public class TerrainManager : Singleton<TerrainManager>
                 if (isWater == true)
                     LoadMapData(x, waterLevel - 1, x + 1, waterLevel, TileType.LILYPAD);
                 else if (isWater == false)
+                {
                     LoadMapData(x, surfaceHeights[x], x + 1, surfaceHeights[x] + 1, TileType.FLOWER);
+                }
             }
         }
         #endregion
@@ -138,7 +142,6 @@ public class TerrainManager : Singleton<TerrainManager>
                 }
             }
         }
-        gapLengths = gapLengths.Distinct().ToList();
         for (int i = 0; i < gapLengths.Count; i++)
         {
             try
@@ -154,6 +157,7 @@ public class TerrainManager : Singleton<TerrainManager>
                 gapLengths = temp.ToList();
             }
         }
+        gapLengths = gapLengths.Distinct().ToList();
         for (int x = 0; x < gapLengths.Count; x++)
         {
             isWater = false;
@@ -166,22 +170,20 @@ public class TerrainManager : Singleton<TerrainManager>
             }
             if (isWater == false)
             {
-                if (gapLengths[x].count >= 6 && gapLengths[x].count < 9)
+                if (gapLengths[x].count >= 5 && gapLengths[x].count < 8 && gapLengths[x].count % 2 == 1)
                 {
                     int midpoint = gapLengths[x].xCoord + gapLengths[x].count / 2 + 1;
-                    int chance = rng.Next(1, 8);
 
-                    if (chance != 5)
-                    {
-                        rockCount = 0;
-                        LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord], midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 3, TileType.ROCK);
-                        LoadMapData(midpoint - 1, surfaceHeights[gapLengths[x].xCoord] + 3, midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 4, TileType.ROCK);
-                        LoadMapData(midpoint - 1, surfaceHeights[gapLengths[x].xCoord] + 4, midpoint + 1, surfaceHeights[gapLengths[x].xCoord] + 5, TileType.ROCK);
-                    }
+                    rockCount = 0;
+                    LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord], midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 3, TileType.ROCK);
+                    LoadMapData(midpoint - 1, surfaceHeights[gapLengths[x].xCoord] + 3, midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 4, TileType.ROCK);
+                    LoadMapData(midpoint - 1, surfaceHeights[gapLengths[x].xCoord] + 4, midpoint + 1, surfaceHeights[gapLengths[x].xCoord] + 5, TileType.ROCK);
                 }
-                else if (gapLengths[x].count >= 9)
+                else if (gapLengths[x].count >= 8 && gapLengths[x].count % 2 == 1)
                 {
                     int midpoint = gapLengths[x].xCoord + gapLengths[x].count / 2;
+                    if (gapLengths[x].xCoord + gapLengths[x].count / 2 % 2 == 0)
+                        midpoint = gapLengths[x].xCoord + gapLengths[x].count / 2 + 1;
 
                     treeCount = 0;
                     LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord], midpoint + 3, surfaceHeights[gapLengths[x].xCoord] + 1, TileType.TREE);
@@ -234,7 +236,12 @@ public class TerrainManager : Singleton<TerrainManager>
                     node.RockTileType = GetRockOrTreeType(node);
                 else if (node.TileData == GetTileData(TileType.TREE))
                     node.TreeTileType = GetRockOrTreeType(node);
-;            }
+                else
+                {
+                    node.RockTileType = 100;
+                    node.TreeTileType = 100;
+                }
+;           }
         }
     }
     public List<Node> ValidSpawns()

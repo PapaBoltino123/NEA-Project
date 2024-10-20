@@ -93,6 +93,10 @@ namespace System.AdditionalDataStructures
                 this.IsTree = false;
             }
         }
+        public override string ToString()
+        {
+            return tileData;
+        }
         #endregion
     }
     public class Grid<T>
@@ -291,10 +295,15 @@ namespace System.AdditionalDataStructures
         private List<T> elements = new List<T>();
         private int maxSize;
         #endregion
-        #region Constructor
+        #region Constructors
         public CustomQueue(int capacity)
         {
             maxSize = capacity;
+        }
+        public CustomQueue(List<T> list)
+        {
+            elements = list;
+            maxSize = list.Count;
         }
         #endregion
         #region Properties
@@ -341,6 +350,13 @@ namespace System.AdditionalDataStructures
         public void Clear()
         {
             elements.Clear();
+        }
+        public bool Contains(T item)
+        {
+            if (elements.Contains(item))
+                return true;
+            else
+                return false;
         }
         #endregion
     }
