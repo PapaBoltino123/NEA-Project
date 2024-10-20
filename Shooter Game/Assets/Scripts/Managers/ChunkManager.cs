@@ -9,135 +9,84 @@ public class ChunkManager : Singleton<ChunkManager>
 {
     #region Variables Declaration
     [SerializeField] private GameObject chunkPrefab;
-    [SerializeField] private GameObject chunkRoot;
-    [SerializeField] LayerMask chunkLayer;
-    private bool isUpdatingChunks = false;
+
+    private Grid<Node> worldMap;
+    private Vector3 initialWorldChunkPosition;
+    private Vector2Int initialMapChunkPosition;
     [NonSerialized] public List<Node> validSpawnPoints;
-    private Vector3 playerSpawnPosition;
-    [NonSerialized] public List<Chunk> chunksToLoad;
-    private const int LEFTRANGE = 2;
+    private Vector3 playerWorldPosition;
+    private Vector2Int playerMapPosition;
+
+    private List<Chunk> chunksToLoad;
+    private List<Chunk> chunksToUnload;
+    private const int LEFTRANGE = -2;
     private const int RIGHTRANGE = 1;
     #endregion
     #region Methods
     private void Start()
     {
-        validSpawnPoints = TerrainManager.Instance.ValidSpawns();
-        playerSpawnPosition = TerrainManager.Instance.SetPlayerPosition(validSpawnPoints);
         chunksToLoad = new List<Chunk>();
+        chunksToUnload = new List<Chunk>();
 
-        StartCoroutine(LoadChunks());
-        StartCoroutine(UnloadChunks());
+        worldMap = TerrainManager.Instance.ReturnWorldMap();
+        validSpawnPoints = TerrainManager.Instance.ValidSpawns();
+        playerWorldPosition = TerrainManager.Instance.SetPlayerPosition(validSpawnPoints);
+        playerMapPosition = new Vector2Int(worldMap.GetXY(playerWorldPosition).x, worldMap.GetXY(playerWorldPosition).y);
+        initialMapChunkPosition = new Vector2Int((playerMapPosition.x / TerrainManager.Instance.chunkWidth) * TerrainManager.Instance.chunkWidth, 0);
+        initialWorldChunkPosition = worldMap.GetWorldPosition(initialMapChunkPosition.x, initialMapChunkPosition.y);
 
-        Player.Instance.transform.position = playerSpawnPosition;
+        GenerateChunks(initialMapChunkPosition);
+        StartCoroutine(SpawnPlayerDelay(4f));
     }
-    public void ClearAllChunks()
+    private Rect GetChunkLoadBounds(Vector2Int initialChunkPosition)
     {
-        StopAllCoroutines();
-
-        List<Chunk> chunksToUnload = new List<Chunk>();
-        foreach (Transform child in chunkRoot.transform)
-        {
-            Chunk chunk = child.GetComponent<Chunk>();
-
-            if (chunk != null)
-                chunksToUnload.Add(chunk);
-        }
-        foreach (Chunk chunk in chunksToUnload)
-        {
-            if (chunk != null)
-                chunk.UnloadChunk();
-        }
-        StartCoroutine(LoadChunks());
-        StartCoroutine(UnloadChunks());
-    }
-    public Chunk GetChunk(Vector3Int position)
-    {
-        RaycastHit2D hit = Physics2D.Raycast(new Vector2(position.x + 0.5f, position.y + 0.5f), Vector2.zero, 0f, chunkLayer);
-
-        if (hit == true)
-            return hit.collider.GetComponent<Chunk>();
-        else
-            return null;
-    }
-    private Rect GetChunkLoadBounds()
-    {
-        Vector3 regionStart = playerSpawnPosition + Vector3.left * LEFTRANGE;
-        Vector3 regionEnd = playerSpawnPosition + Vector3.right * RIGHTRANGE;
-
-        int startX = (int)regionStart.x / TerrainManager.Instance.chunkWidth;
-        int startY = (int)regionStart.y / TerrainManager.Instance.chunkHeight;
-        int endX = ((int)regionEnd.x + TerrainManager.Instance.chunkWidth) / TerrainManager.Instance.chunkWidth;
-        int endY = ((int)regionEnd.y + TerrainManager.Instance.chunkHeight) / TerrainManager.Instance.chunkHeight;
+        int startX = initialChunkPosition.x - 2 * TerrainManager.Instance.chunkWidth;
+        int startY = 0;
+        int endX = initialChunkPosition.x + TerrainManager.Instance.chunkWidth;
+        int endY = TerrainManager.Instance.chunkHeight;
 
         return new Rect(startX, startY, endX - startX, endY - startY);
     }
-    #endregion
-    #region Enumerators
-    private IEnumerator LoadChunks()
+    private void GenerateChunks(Vector2Int initialMapChunkPosition)
     {
-        while (true)
-        {
-            isUpdatingChunks = true;
-            yield return StartCoroutine(PerformLoadChunks());
-            isUpdatingChunks = false;
-            yield return null;
-        }
-    }
-    private IEnumerator UnloadChunks()
-    {
-        while (true)
-        {
-            if (!isUpdatingChunks)
-                yield return StartCoroutine(PerformUnloadChunks());
-            yield return null;
-        }
-    }
-    private IEnumerator PerformLoadChunks()
-    {
-        Rect loadBoundaries = GetChunkLoadBounds();
+        bool isWithinBounds = true; 
+        Rect bounds = GetChunkLoadBounds(initialMapChunkPosition);
         
-        for (int w = (int)loadBoundaries.xMax; w >= (int)loadBoundaries.xMin; w--)
+        for (int x = (int)bounds.xMin; x < bounds.xMax + TerrainManager.Instance.chunkWidth; x += 32)
         {
-            for (int h = (int)loadBoundaries.yMax; h >= (int)loadBoundaries.yMin; h--)
-            {
-                if (w < 0 || w >= TerrainManager.Instance.worldWidth / TerrainManager.Instance.chunkWidth || h < 0 || h >= TerrainManager.Instance.worldHeight / TerrainManager.Instance.chunkHeight)
-                    continue;
-
-                Vector3Int chunkPosition = new Vector3Int(w, h, 0);
-                Vector3Int worldPosition = new Vector3Int(w * TerrainManager.Instance.chunkWidth, h * TerrainManager.Instance.chunkHeight, 0);
-
-                if (loadBoundaries.Contains(chunkPosition) && GetChunk(worldPosition) == false)
-                {
-                    chunksToLoad.Add(Instantiate(chunkPrefab, worldPosition, Quaternion.identity, chunkRoot.transform).GetComponent<Chunk>());
-                    yield return null;
-                }
-            }
+            Vector2Int chunkMapPosition = new Vector2Int(x, 0);
+            Vector3 chunkWorldPosition = worldMap.GetWorldPosition(chunkMapPosition.x, chunkMapPosition.y);
+            Chunk chunk = Instantiate(chunkPrefab, chunkWorldPosition, Quaternion.identity).GetComponent<Chunk>();
+            chunksToLoad.Add(chunk);
         }
     }
-    private IEnumerator PerformUnloadChunks()
+    private void DeleteChunks(Vector2Int initialChunkPosition)
     {
-        Rect loadBoundaries = GetChunkLoadBounds();
-        List<Chunk> chunksToUnload = new List<Chunk>();
-        foreach (Transform child in chunkRoot.transform)
+        Rect bounds = GetChunkLoadBounds(initialChunkPosition);
+        List<int> indexes = new List<int>();
+
+        foreach (Chunk chunk in chunksToLoad)
         {
-            Chunk chunk = child.GetComponent<Chunk>();
-            if (chunk != null)
+            if (!bounds.Contains(new Vector2(worldMap.GetXY(chunk.transform.position).x, 0)))
             {
-                if (loadBoundaries.Contains(chunk.ChunkPosition) == false)
-                    chunksToUnload.Add(chunk);
+                chunksToUnload.Add(chunk);
+                indexes.Add(chunksToLoad.FindIndex(c => chunk));
             }
         }
-
+        for (int i = 0; i < indexes.Count; i++)
+        {
+            chunksToLoad.RemoveAt(indexes[i]);
+        }
         foreach (Chunk chunk in chunksToUnload)
         {
-            while (isUpdatingChunks == true)
-                yield return null;
-
-
-            if (chunk != null)
-                chunk.UnloadChunk();
-            yield return null;
+            chunk.UnloadChunk();
         }
+        chunksToUnload.Clear();
+    }
+    private IEnumerator SpawnPlayerDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Player.Instance.transform.position = playerWorldPosition;
     }
     #endregion
 }

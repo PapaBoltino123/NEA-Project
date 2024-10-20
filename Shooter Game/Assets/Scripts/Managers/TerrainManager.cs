@@ -16,19 +16,18 @@ public class TerrainManager : Singleton<TerrainManager>
 {
     #region Variable Declaration
     [SerializeField] int seed, smoothness, waterLevel;
-    [SerializeField] TileBase[] mainTiles, treeTiles, rockTiles;
 
     [NonSerialized] public int chunkWidth = 64;
     [NonSerialized] public int chunkHeight = 128;
-    [NonSerialized] public int worldWidth = 131072;
+    [NonSerialized] public int rockCount = 0;
+    [NonSerialized] public int treeCount = 0;
+    [NonSerialized] public int worldWidth = 8192;
     [NonSerialized] public int worldHeight = 128;
     [NonSerialized] public int[] surfaceHeights;
 
     private PerlinNoise perlinNoise;
     private Grid<Node> map;
-    private float cellSize = 0.16f;
-    private List<Node> rockList;
-    private List<Node> treeList;
+    public float cellSize = 0.16f;
     #endregion
     #region Methods
     private void Awake()
@@ -47,8 +46,6 @@ public class TerrainManager : Singleton<TerrainManager>
         map = new Grid<Node>(worldWidth, worldHeight, cellSize, (Grid<Node> g, int x, int y) => new Node(g, x, y));
         perlinNoise = new PerlinNoise(seed);
         surfaceHeights = new int[worldWidth];
-        rockList = new List<Node>();
-        treeList = new List<Node>();
         LoadMapData(0, 0, worldWidth, worldHeight, TileType.SKY);
         GenerateWorld();
     }
@@ -176,6 +173,7 @@ public class TerrainManager : Singleton<TerrainManager>
 
                     if (chance != 5)
                     {
+                        rockCount = 0;
                         LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord], midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 3, TileType.ROCK);
                         LoadMapData(midpoint - 1, surfaceHeights[gapLengths[x].xCoord] + 3, midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 4, TileType.ROCK);
                         LoadMapData(midpoint - 1, surfaceHeights[gapLengths[x].xCoord] + 4, midpoint + 1, surfaceHeights[gapLengths[x].xCoord] + 5, TileType.ROCK);
@@ -185,6 +183,7 @@ public class TerrainManager : Singleton<TerrainManager>
                 {
                     int midpoint = gapLengths[x].xCoord + gapLengths[x].count / 2;
 
+                    treeCount = 0;
                     LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord], midpoint + 3, surfaceHeights[gapLengths[x].xCoord] + 1, TileType.TREE);
                     LoadMapData(midpoint - 2, surfaceHeights[gapLengths[x].xCoord] + 1, midpoint + 2, surfaceHeights[gapLengths[x].xCoord] + 2, TileType.TREE);
                     LoadMapData(midpoint - 3, surfaceHeights[gapLengths[x].xCoord] + 2, midpoint + 4, surfaceHeights[gapLengths[x].xCoord] + 5, TileType.TREE);
@@ -194,12 +193,14 @@ public class TerrainManager : Singleton<TerrainManager>
         }
         #endregion
     }
+    public Grid<Node> ReturnWorldMap()
+    {
+        return map;
+    }
     private string GetTileData(TileType tileType)
     {
         switch (tileType)
         {
-            case TileType.SKY:
-                return "0000";
             case TileType.STONE:
                 return "0001";
             case TileType.DIRT:
@@ -217,7 +218,7 @@ public class TerrainManager : Singleton<TerrainManager>
             case TileType.ROCK:
                 return "1000";
             default:
-                return null;
+                return "0000";
         }
     }
     private void LoadMapData(int startX, int startY, int endX, int endY, TileType tileType)
@@ -228,7 +229,12 @@ public class TerrainManager : Singleton<TerrainManager>
             {
                 Node node = map.GetGridObject(x, y);
                 node.TileData = GetTileData(tileType);
-            }
+
+                if (node.TileData == GetTileData(TileType.ROCK))
+                    node.RockTileType = GetRockOrTreeType(node);
+                else if (node.TileData == GetTileData(TileType.TREE))
+                    node.TreeTileType = GetRockOrTreeType(node);
+;            }
         }
     }
     public List<Node> ValidSpawns()
@@ -256,7 +262,7 @@ public class TerrainManager : Singleton<TerrainManager>
 
         do
         {
-            n = random.Next(45000, 55000);
+            n = random.Next((worldWidth / 2) - 128, (worldWidth / 2) + 128);
             Node node = map.GetGridObject(n, surfaceHeights[n]);
             if (validSpawnNodes.Contains(node))
             {
@@ -265,137 +271,24 @@ public class TerrainManager : Singleton<TerrainManager>
             }
 
         } while (isInvalidSpawn == true);
-        return new Vector3(spawnPosition.x + 0.08f, spawnPosition.y + 0.2f);
+        return new Vector3(spawnPosition.x + 0.08f, spawnPosition.y + 15f);
     }
-    #endregion
-    #region Enumerators
-    public IEnumerator GenerateChunk(Chunk chunk)
+    private int GetRockOrTreeType(Node node)
     {
-        for (int w = 0; w < chunkWidth; w++)
+        if (node.TileData == GetTileData(TileType.ROCK))
         {
-            for (int h = 0; h < chunkHeight; h++)
-            {
-                Vector3Int tilePosition = new Vector3Int(chunk.Position.x + w, chunk.Position.y + h, 0);
-                if ((tilePosition.x < 0 || tilePosition.x >= worldWidth) || tilePosition.y < 0 || tilePosition.y >= worldHeight)
-                    continue;
-
-                chunk.SetChunkTile(tilePosition, TileMapType.GROUND_COLLISIONS, ReturnTile(map.GetGridObject(tilePosition.x, tilePosition.y), TileMapType.GROUND_COLLISIONS));
-                chunk.SetChunkTile(tilePosition, TileMapType.GROUND, ReturnTile(map.GetGridObject(tilePosition.x, tilePosition.y), TileMapType.GROUND));
-                chunk.SetChunkTile(tilePosition, TileMapType.DECORATIONS, ReturnTile(map.GetGridObject(tilePosition.x, tilePosition.y), TileMapType.DECORATIONS));
-                chunk.SetChunkTile(tilePosition, TileMapType.OTHER_COLLISIONS, ReturnTile(map.GetGridObject(tilePosition.x, tilePosition.y), TileMapType.OTHER_COLLISIONS));
-            }
-            yield return null;
+            int type = rockCount;
+            rockCount++;
+            return type;
         }
-        yield break;
-    }
-    private TileBase ReturnTile(Node node, TileMapType tileMapType)
-    {
-        if (tileMapType == TileMapType.GROUND)
+        else if (node.TileData == GetTileData(TileType.TREE))
         {
-            if (node.TileData == "0000")
-                return mainTiles[0];
-            else if (node.TileData == "0001")
-                return mainTiles[1];
-            else if (node.TileData == "0010")
-                return mainTiles[2];
-            else if (node.TileData == "0011")
-                return mainTiles[3];
-            else if (node.TileData == "0100")
-                return mainTiles[4];
-            else if (node.TileData == "0101")
-                return mainTiles[5];
-            else if (node.TileData == "0110")
-                return mainTiles[0];
-            else if (node.TileData == "0111")
-                return mainTiles[0];
-            else if (node.TileData == "1000")
-                return mainTiles[0];
-            else
-                return null;
-        }
-        else if (tileMapType == TileMapType.DECORATIONS)
-        {
-            if (node.TileData == "0110")
-                return mainTiles[6];
-            else if (node.TileData == "0111")
-            {
-                try
-                {
-                    node.TreeTileType = treeList.Count;
-                    
-                    if (node.TreeTileType < treeTiles.Length)
-                    {
-                        treeList.Add(node);
-                    }
-                    else if (node.TreeTileType > treeTiles.Length)
-                    {
-                        treeList.Clear();
-                    }
-
-                    return treeTiles[node.TreeTileType];
-                }
-                catch 
-                {
-                    Debug.Log($"Tree list count: {treeList.Count}");
-                    Debug.Log($"Tree tile type: {node.TreeTileType}");
-                    throw new Exception("Tree won't fucking work");
-                }
-            }
-            else if (node.TileData == "1000")
-            {
-                try
-                {
-                    node.RockTileType = rockList.Count;
-
-                    if (node.RockTileType < rockTiles.Length)
-                    {
-                        rockList.Add(node);
-                    }
-                    else if (node.RockTileType > rockTiles.Length)
-                    {
-                        rockList.Clear();
-                    }
-
-                    return rockTiles[node.RockTileType];
-                }
-                catch
-                {
-                    Debug.Log($"Rock list count: {rockList.Count}");
-                    Debug.Log($"Tree tile type: {node.RockTileType}");
-                    throw new Exception("Rock won't fucking work");
-                }
-            }
-            else
-                return null;
-        }
-        else if (tileMapType == TileMapType.GROUND_COLLISIONS)
-        {
-            if (node.TileData == "0000")
-                return mainTiles[0];
-            else if (node.TileData == "0001")
-                return mainTiles[1];
-            else if (node.TileData == "0010")
-                return mainTiles[2];
-            else if (node.TileData == "0011")
-                return mainTiles[3];
-            else if (node.TileData == "0101")
-                return mainTiles[5];
-            else if (node.TileData == "1000")
-                return mainTiles[0];
-            else
-                return null;
-        }
-        else if (tileMapType == TileMapType.OTHER_COLLISIONS)
-        {
-            if (node.TileData == "0100")
-                return mainTiles[0];
-            else if (node.TileData == "0111")
-                return mainTiles[1];
-            else
-                return null;
+            int type = treeCount;
+            treeCount++;
+            return type;
         }
         else
-            return null;
+            return 0;
     }
     #endregion
 }

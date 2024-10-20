@@ -1,7 +1,12 @@
 ﻿using System.Algorithms;
 using System.Algorithms.Pathfinding;
+using System.Threading;
 
-int width = 131072; int height = 128; float cellSize = 0.16f;
-Grid<Node> grid = new Grid<Node>(width, height, cellSize, (Grid<Node> g, int x, int y) => new Node(x, y, g));
-
+public class Pathfinding
+{
+    public const float gravity = -1030.0f;
+    public const float maxFallingSpeed = -900.0f;
+    public const float walkSpeed = 160.0f;
+    public const float jumpSpeed = 410.0f;
+}
 
