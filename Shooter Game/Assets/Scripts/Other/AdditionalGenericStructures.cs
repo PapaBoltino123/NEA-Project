@@ -360,4 +360,10 @@ namespace System.AdditionalDataStructures
         }
         #endregion
     }
+    public enum SceneType
+    {
+        MANAGER = 0,
+        TITLESCREEN = 1,
+        MAINGAME = 2
+    }
 }

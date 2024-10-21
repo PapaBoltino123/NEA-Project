@@ -24,7 +24,8 @@ public class ChunkManager : Singleton<ChunkManager>
     public float chunkLifetime = 10f;   
     private CustomQueue<GameObject> chunkPool;   
     private Dictionary<Vector2Int, GameObject> activeChunks;
-    private Dictionary<GameObject, Coroutine> chunkLifetimes; 
+    private Dictionary<GameObject, Coroutine> chunkLifetimes;
+
     bool canLoadInChunksOnUpdate;
     #endregion
     #region Methods

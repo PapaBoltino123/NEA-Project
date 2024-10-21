@@ -11,11 +11,11 @@ public class CharacterControllers : MonoBehaviour
     float speed, jumpForce;
     Vector3 spawnPosition = new Vector3(-5.13f, 0.65f, 0);
 
-    void Start()
+    void OnEnable()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
-        speed = 3; jumpForce = 5;
+        speed = 1.5f; jumpForce = 4;
 
         transform.position = spawnPosition;
     }
@@ -26,13 +26,16 @@ public class CharacterControllers : MonoBehaviour
         anim.SetBool("run", rb.velocity.x != 0);
 
         bool isGrounded = Physics2D.Raycast(transform.position, Vector2.down, 0.1f, groundLayer);
+        bool isAgainstWall = Physics2D.Raycast(transform.position, Vector2.right, 0.1f, groundLayer);
 
         if (isGrounded == true)
         {
             anim.SetBool("grounded", true);
 
-            if (rb.velocity.x == 0)
+            if (isAgainstWall == true)
+            {
                 isJumping = true;
+            }
         }
     }
     private void FixedUpdate()
