@@ -20,7 +20,7 @@ public class Chunk : MonoBehaviour
     private bool isUnloading = false;
     #endregion
     #region Methods
-    private void Start()
+    public void Load()
     {
         chunkHeight = TerrainManager.Instance.chunkHeight;
         chunkWidth = TerrainManager.Instance.chunkWidth;
