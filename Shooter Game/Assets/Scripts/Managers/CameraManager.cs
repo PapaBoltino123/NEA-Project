@@ -1,15 +1,20 @@
 using UnityEngine;
 
-public class CameraManager : Manager
+public class CameraManager : MonoBehaviour
 {
     [SerializeField] Transform target;
+    [SerializeField] Camera gameCam;
 
-    private void LateUpdate()
+    private void Start()
     {
-        RunManager();
+        gameCam.orthographicSize = GameManager.Instance.zoom;
+    }
+    private void Update()
+    {
+        gameCam.orthographicSize = GameManager.Instance.zoom;
     }
 
-    public override void RunManager()
+    private void LateUpdate()
     {
         transform.position = new Vector3(target.position.x, target.position.y, transform.position.z);
     }

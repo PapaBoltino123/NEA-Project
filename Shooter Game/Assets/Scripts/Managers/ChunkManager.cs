@@ -22,8 +22,8 @@ public class ChunkManager : Singleton<ChunkManager>
     private const int RIGHTRANGE = 1;
     public int poolSize = 20;    
     public float chunkLifetime = 10f;   
-    private CustomQueue<GameObject> chunkPool;   
-    private Dictionary<Vector2Int, GameObject> activeChunks;
+    public CustomQueue<GameObject> chunkPool;   
+    public Dictionary<Vector2Int, GameObject> activeChunks;
     private Dictionary<GameObject, Coroutine> chunkLifetimes;
 
     bool canLoadInChunksOnUpdate;
@@ -32,7 +32,7 @@ public class ChunkManager : Singleton<ChunkManager>
     private void Start()
     {
         canLoadInChunksOnUpdate = false;
-        chunkPool = new CustomQueue<GameObject>(TerrainManager.Instance.worldWidth);
+        chunkPool = new CustomQueue<GameObject>();
         activeChunks = new Dictionary<Vector2Int, GameObject>();
         chunkLifetimes = new Dictionary<GameObject, Coroutine>();
         worldMap = TerrainManager.Instance.ReturnWorldMap();

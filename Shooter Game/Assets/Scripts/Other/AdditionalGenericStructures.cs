@@ -293,17 +293,12 @@ namespace System.AdditionalDataStructures
     {
         #region Variables Declaration
         private List<T> elements = new List<T>();
-        private int maxSize;
         #endregion
         #region Constructors
-        public CustomQueue(int capacity)
-        {
-            maxSize = capacity;
-        }
+        public CustomQueue() { }
         public CustomQueue(List<T> list)
         {
             elements = list;
-            maxSize = list.Count;
         }
         #endregion
         #region Properties
@@ -315,10 +310,7 @@ namespace System.AdditionalDataStructures
         #region Methods
         public void Enqueue(T item)
         {
-            if (elements.Count == maxSize)
-                throw new Exception("The queue is full.");
-            else
-                elements.Add(item);
+            elements.Add(item);
         }
         public T Dequeue()
         {

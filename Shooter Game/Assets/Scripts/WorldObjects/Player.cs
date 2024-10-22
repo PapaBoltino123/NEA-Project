@@ -29,6 +29,7 @@ public class Player : Singleton<Player>, Actor
 
     private void Start()
     {
+        GameManager.Instance.activeActors.Add(this.gameObject);
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
     }

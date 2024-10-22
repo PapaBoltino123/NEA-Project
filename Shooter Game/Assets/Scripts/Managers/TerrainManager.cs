@@ -33,8 +33,7 @@ public class TerrainManager : Singleton<TerrainManager>
     #region Methods
     private void Awake()
     {
-        //seed = SetSeed();
-        seed = -359;
+        seed = SetSeed();
         Initialize();
     }
     private static int SetSeed()
