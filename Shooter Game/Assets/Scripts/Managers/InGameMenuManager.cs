@@ -54,6 +54,7 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
             Destroy(chunk);
         }
 
+        GameManager.Instance.fileManager.SaveGame();
         GameManager.Instance.activeActors.Clear();
         GameManager.Instance.LoadMainMenu();
     }

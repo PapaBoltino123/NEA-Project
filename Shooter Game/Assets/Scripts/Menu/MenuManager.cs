@@ -10,7 +10,9 @@ public class MenuManager : MonoBehaviour
     [SerializeField] GameObject playerPrefab;
     [SerializeField] GameObject zombiePrefab;
     [SerializeField] GameObject[] initialMenuUI;
-    [SerializeField] Slider audioSlider, fovSlider; 
+    [SerializeField] GameObject[] startingMenuUI;
+    [SerializeField] Slider audioSlider, fovSlider;
+    [SerializeField] Text fileLocationText;
     List<GameObject> actors;
     bool canSpawn = true;
     #endregion
@@ -73,17 +75,6 @@ public class MenuManager : MonoBehaviour
             canSpawn = true;
         }
     }
-    public void LoadGame()
-    {
-        StopAllCoroutines();
-
-        foreach (var actor in actors)
-        {
-            Destroy(actor);
-        }
-
-        GameManager.Instance.LoadGame();
-    }
     public void ExitApplication()
     {
         UnityEditor.EditorApplication.isPlaying = false;
@@ -109,6 +100,72 @@ public class MenuManager : MonoBehaviour
         for (int i = 4; i < initialMenuUI.Length; i++)
         {
             initialMenuUI[i].SetActive(false);
+        }
+        foreach (var gameObject in startingMenuUI)
+        {
+            gameObject.SetActive(false);
+        }
+    }
+    public void LoadStartingOptionsMenu()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            initialMenuUI[i].SetActive(false);
+        }
+        string path = GameManager.Instance.fileManager.RecentFile();
+
+        if (path == null)
+        {
+            startingMenuUI[0].SetActive(false);
+            fileLocationText.text = "No file located.\nStart new game?";
+            for (int i = 1; i < startingMenuUI.Length; i++)
+            {
+                startingMenuUI[i].SetActive(true);
+            }
+
+            startingMenuUI[startingMenuUI.Length - 1].GetComponent<RectTransform>().localPosition = new Vector3(-847, 145, 0);
+        }
+        else
+        {
+            fileLocationText.text = "A file was located.\nLoad save or new game?";
+            for (int i = 0; i < startingMenuUI.Length; i++)
+            {
+                startingMenuUI[i].SetActive(true);
+            }
+            startingMenuUI[startingMenuUI.Length - 1].GetComponent<RectTransform>().localPosition = new Vector3(-847, 60, 0);
+        }
+    }
+    public void StartGame()
+    {
+        StopAllCoroutines();
+
+        foreach (var actor in actors)
+        {
+            Destroy(actor);
+        }
+
+        GameManager.Instance.LoadGame(false);
+    }
+    public void NewGame()
+    {
+        StopAllCoroutines();
+
+        foreach (var actor in actors)
+        {
+            Destroy(actor);
+        }
+
+        GameManager.Instance.LoadGame(true);
+    }
+    public void CloseStartingOptionsMenu()
+    {
+        foreach (GameObject gameObject in startingMenuUI)
+        {
+            gameObject.SetActive(false);
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            initialMenuUI[i].SetActive(true);
         }
     }
     private void OnAudioSliderChanged(float value)

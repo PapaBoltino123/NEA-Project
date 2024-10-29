@@ -15,21 +15,10 @@ public class Player : Singleton<Player>, Actor
     Animator anim = new Animator();
     bool isJumping;
     private float moveInput = 0;
-
-    public float MoveInput
-    {
-        get
-        {
-            if (moveInput == 0)
-                return 1;
-            else
-                return moveInput;
-        }
-    }
+    public PlayerState playerState = PlayerState.ALIVE;
 
     private void Start()
     {
-        GameManager.Instance.activeActors.Add(this.gameObject);
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
     }
@@ -78,4 +67,9 @@ public class Player : Singleton<Player>, Actor
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
     }
+}
+public enum PlayerState
+{
+    ALIVE, 
+    DEAD
 }

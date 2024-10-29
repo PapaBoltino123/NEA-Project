@@ -5,6 +5,7 @@ using UnityEngine;
 using System.AdditionalDataStructures;
 using System.Algorithms.TerrainGeneration;
 using Unity.VisualScripting;
+using System.AddtionalEventStructures;
 
 public class ChunkManager : Singleton<ChunkManager>
 {
@@ -17,6 +18,7 @@ public class ChunkManager : Singleton<ChunkManager>
     [NonSerialized] public List<Node> validSpawnPoints;
     private Vector3 playerWorldPosition;
     private Vector2Int playerMapPosition;
+    private GameData loadedData;
 
     private const int LEFTRANGE = -2;
     private const int RIGHTRANGE = 1;
@@ -24,36 +26,15 @@ public class ChunkManager : Singleton<ChunkManager>
     public float chunkLifetime = 10f;   
     public CustomQueue<GameObject> chunkPool;   
     public Dictionary<Vector2Int, GameObject> activeChunks;
-    private Dictionary<GameObject, Coroutine> chunkLifetimes;
 
     bool canLoadInChunksOnUpdate;
     #endregion
     #region Methods
-    private void Start()
+    private void Awake()
     {
-        canLoadInChunksOnUpdate = false;
-        chunkPool = new CustomQueue<GameObject>();
-        activeChunks = new Dictionary<Vector2Int, GameObject>();
-        chunkLifetimes = new Dictionary<GameObject, Coroutine>();
-        worldMap = TerrainManager.Instance.ReturnWorldMap();
-
-        Player.Instance.rb.constraints = RigidbodyConstraints2D.FreezePositionY;
-        Player.Instance.rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-        validSpawnPoints = TerrainManager.Instance.ValidSpawns();
-        playerWorldPosition = TerrainManager.Instance.SetPlayerPosition(validSpawnPoints);
-        playerMapPosition = new Vector2Int(worldMap.GetXY(playerWorldPosition).x, worldMap.GetXY(playerWorldPosition).y);
-        initialMapChunkPosition = new Vector2Int((playerMapPosition.x / TerrainManager.Instance.chunkWidth) * TerrainManager.Instance.chunkWidth, 0);
-        initialWorldChunkPosition = worldMap.GetWorldPosition(initialMapChunkPosition.x, initialMapChunkPosition.y);
-
-        for (int i = 0; i < poolSize; i++)
-        {
-            GameObject chunkGameObject = Instantiate(chunkPrefab);
-            chunkGameObject.SetActive(false);
-            chunkPool.Enqueue(chunkGameObject);
-        }
-
-        SetInitialChunks(initialMapChunkPosition);
-        StartCoroutine(SpawnPlayerDelay(5f));
+        GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame);
+        GameManager.Instance.fileManager.dataBroadcast.SendNewData += new EventHandler<DataEventArgs>(NewGame);
+        GameManager.Instance.fileManager.dataBroadcast.SaveData += new EventHandler<EventArgs>(SaveGame);
     }
     private void Update()
     {
@@ -71,6 +52,21 @@ public class ChunkManager : Singleton<ChunkManager>
 
             initialMapChunkPosition = new Vector2Int((playerMapPosition.x / TerrainManager.Instance.chunkWidth) * TerrainManager.Instance.chunkWidth, 0);
         }
+    }
+    private void LoadGame(object sender, DataEventArgs e)
+    {
+        GameData data = e.gameData;
+        loadedData = data;
+    }
+    private void SaveGame(object sender, EventArgs e)
+    {
+        GameManager.Instance.savedData.playerX = playerWorldPosition.x;
+        GameManager.Instance.savedData.playerY = playerWorldPosition.y;
+    }
+    private void NewGame(object sender, DataEventArgs e)
+    {
+        GameData data = e.gameData;
+        loadedData = data;
     }
     private Rect GetChunkLoadBounds(Vector2Int initialChunkPosition)
     {
@@ -100,11 +96,6 @@ public class ChunkManager : Singleton<ChunkManager>
             chunk = Instantiate(chunkPrefab);
             chunk.SetActive(false);
         }
-        if (chunkLifetimes.ContainsKey(chunk))
-        {
-            StopCoroutine(chunkLifetimes[chunk]);
-            chunkLifetimes.Remove(chunk);
-        }
 
         chunk.SetActive(true);
         chunk.transform.position = chunkWorldPosition;
@@ -121,8 +112,6 @@ public class ChunkManager : Singleton<ChunkManager>
         GameObject chunk = activeChunks[mapChunkPosition];
         chunk.SetActive(false);
         chunkPool.Enqueue(chunk);
-        Coroutine destructionCoroutine = StartCoroutine(DestroyChunkAfterTime(chunk, chunkLifetime));
-        chunkLifetimes[chunk] = destructionCoroutine;
         activeChunks.Remove(mapChunkPosition);
     }
     public void UpdateChunks(Vector2Int initialChunkMapPosition)
@@ -158,8 +147,41 @@ public class ChunkManager : Singleton<ChunkManager>
             UnloadChunk(chunkMapPosition);
         }
     }
-    private void SetInitialChunks(Vector2Int initialMapChunkPosition)
+    public void SetInitialChunks()
     {
+        canLoadInChunksOnUpdate = false;
+        chunkPool = new CustomQueue<GameObject>();
+        activeChunks = new Dictionary<Vector2Int, GameObject>();
+
+        for (int i = 0; i < poolSize; i++)
+        {
+            GameObject chunkGameObject = Instantiate(chunkPrefab);
+            chunkGameObject.SetActive(false);
+            chunkPool.Enqueue(chunkGameObject);
+        }
+
+        worldMap = TerrainManager.Instance.ReturnWorldMap();
+
+        Player.Instance.rb.constraints = RigidbodyConstraints2D.FreezePositionY;
+        Player.Instance.rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+
+        try
+        {
+            playerWorldPosition = GetInitialWorldPosition();
+        }
+        catch
+        {
+            if (loadedData == null)
+            {
+                Debug.Log(loadedData);
+                throw new Exception("Shit");
+            }
+        }
+
+        playerMapPosition = new Vector2Int(worldMap.GetXY(playerWorldPosition).x, worldMap.GetXY(playerWorldPosition).y);
+        initialMapChunkPosition = new Vector2Int((playerMapPosition.x / TerrainManager.Instance.chunkWidth) * TerrainManager.Instance.chunkWidth, 0);
+        initialWorldChunkPosition = worldMap.GetWorldPosition(initialMapChunkPosition.x, initialMapChunkPosition.y);
+
         List<Vector2Int> chunksToLoad = new List<Vector2Int>();
         Rect bounds = GetChunkLoadBounds(initialMapChunkPosition);
 
@@ -173,6 +195,20 @@ public class ChunkManager : Singleton<ChunkManager>
         {
             GenerateChunk(chunkMapPosition);
         }
+
+        StartCoroutine(SpawnPlayerDelay(5f));
+    }
+    private Vector3 GetInitialWorldPosition()
+    {
+        Vector3 playerWorldPosition = new Vector3(loadedData.playerX, loadedData.playerY, 0);
+
+        if (playerWorldPosition.x < 0)
+        {
+            validSpawnPoints = TerrainManager.Instance.ValidSpawns();
+            playerWorldPosition = TerrainManager.Instance.SetPlayerPosition(validSpawnPoints);
+        }
+
+        return playerWorldPosition;
     }
     private IEnumerator SpawnPlayerDelay(float delay)
     {
@@ -180,18 +216,6 @@ public class ChunkManager : Singleton<ChunkManager>
         Player.Instance.transform.position = playerWorldPosition;
         Player.Instance.rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         canLoadInChunksOnUpdate = true;
-    }
-    private IEnumerator DestroyChunkAfterTime(GameObject chunk, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-
-        if (!chunk.activeSelf && chunkPool.Contains(chunk))
-        {
-            List<GameObject> chunkList = chunkPool.ToList();
-            chunkList.Remove(chunk);
-            chunkPool = new CustomQueue<GameObject>(chunkList);
-            Destroy(chunk);
-        }
     }
     #endregion
 }

@@ -12,11 +12,14 @@ using UnityEngine.Tilemaps;
 using System.Linq;
 using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine.UIElements;
+using System.AddtionalEventStructures;
+using UnityEditor;
 
 public class TerrainManager : Singleton<TerrainManager>
 {
     #region Variable Declaration
-    [SerializeField] int seed, smoothness, waterLevel;
+    public int seed;
+    [SerializeField] int smoothness, waterLevel;
 
     [NonSerialized] public int chunkWidth = 64;
     [NonSerialized] public int chunkHeight = 128;
@@ -31,10 +34,11 @@ public class TerrainManager : Singleton<TerrainManager>
     public float cellSize = 0.16f;
     #endregion
     #region Methods
-    private void Awake()
+    private void Start()
     {
-        seed = SetSeed();
-        Initialize();
+        GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame);
+        GameManager.Instance.fileManager.dataBroadcast.SendNewData += new EventHandler<DataEventArgs>(NewGame);
+        GameManager.Instance.fileManager.dataBroadcast.SaveData += new EventHandler<EventArgs>(SaveGame);
     }
     private static int SetSeed()
     {
@@ -44,11 +48,31 @@ public class TerrainManager : Singleton<TerrainManager>
     }
     public void Initialize()
     {
+        if (seed > 10000)
+            seed = SetSeed();
+
         map = new Grid<Node>(worldWidth, worldHeight, cellSize, (Grid<Node> g, int x, int y) => new Node(g, x, y));
         perlinNoise = new PerlinNoise(seed);
         surfaceHeights = new int[worldWidth];
         LoadMapData(0, 0, worldWidth, worldHeight, TileType.SKY);
         GenerateWorld();
+        StartCoroutine(StartChunkManager(0.5f));
+    }
+    private void LoadGame(object sender , DataEventArgs e)
+    {
+        GameData data = e.gameData;
+        seed = data.seed;
+        Initialize();
+    }
+    private void SaveGame(object sender, EventArgs e)
+    {
+        GameManager.Instance.savedData.seed = seed;
+    }
+    private void NewGame(object sender, DataEventArgs e)
+    {
+        GameData data = e.gameData;
+        seed = data.seed;
+        Initialize();
     }
     private void GenerateWorld()
     {
@@ -295,6 +319,11 @@ public class TerrainManager : Singleton<TerrainManager>
         }
         else
             return 0;
+    }
+    private IEnumerator StartChunkManager(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        ChunkManager.Instance.SetInitialChunks();
     }
     #endregion
 }

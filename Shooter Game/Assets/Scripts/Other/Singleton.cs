@@ -28,8 +28,6 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
                         var singletonObject = new GameObject();
                         instance = singletonObject.AddComponent<T>();
                         singletonObject.name = typeof(T).ToString() + " (Singleton)";
-
-                        DontDestroyOnLoad(singletonObject);
                     }
                 }
 
@@ -40,12 +38,6 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 
 
     private void OnApplicationQuit()
-    {
-        shuttingDown = true;
-    }
-
-
-    private void OnDestroy()
     {
         shuttingDown = true;
     }
