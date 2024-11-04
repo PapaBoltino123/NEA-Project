@@ -65,7 +65,6 @@ public class FileManager
             {
                 GameData data = (GameData)serializer.Deserialize(stream);
                 dataBroadcast.LoadGame(this, data);
-                Debug.Log("Loaded game...");
             }
             catch (Exception e)
             {
@@ -76,7 +75,6 @@ public class FileManager
     public void NewGame()
     {
         dataBroadcast.NewGame(this);
-        Debug.Log("New game...");
     }
     private void WriteToFile(string toStore)
     {

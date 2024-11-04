@@ -12,6 +12,7 @@ public class Player : Singleton<Player>, Actor
     [SerializeField] Animator weaponController;
 
     [NonSerialized] public Rigidbody2D rb = new Rigidbody2D();
+    private BoxCollider2D boxCollider;
     Animator anim = new Animator();
     bool isJumping;
     private float moveInput = 0;
@@ -21,6 +22,7 @@ public class Player : Singleton<Player>, Actor
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        boxCollider = GetComponent<BoxCollider2D>();
     }
     private void Update()
     {
@@ -31,9 +33,8 @@ public class Player : Singleton<Player>, Actor
         else if (input < 0)
             moveInput = input;
         Move(input, speed, rb, anim);
-        bool isGrounded = Physics2D.Raycast(transform.position, Vector2.down, 0.1f, groundLayer);
 
-        if (isGrounded == true)
+        if (IsGrounded() == true)
         {
             anim.SetBool("grounded", true);
 
@@ -66,6 +67,19 @@ public class Player : Singleton<Player>, Actor
     public void Jump(float jumpForce, Rigidbody2D rb)
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+    }
+    private bool IsGrounded()
+    {
+        Bounds bounds = boxCollider.bounds;
+        Vector2 boxSize = new Vector2(bounds.size.x, 0.1f);
+        Vector2 boxCenter = new Vector2(bounds.center.x, bounds.min.y - 0.1f / 2);
+
+        RaycastHit2D hit = Physics2D.BoxCast(boxCenter, boxSize, 0f, Vector2.down, 0.1f, groundLayer);
+
+        if (hit.collider != null)
+            return true;
+        else
+            return false;
     }
 }
 public enum PlayerState
