@@ -10,9 +10,9 @@ namespace System.AdditionalDataStructures
         private Grid<Node> grid;
         public int fCost, gCost;
         public int x, y;
-        public (int parentX, int parentY) parentCoordinates;
+        public (int x, int y, int z) parentCoordinates;
         public int status;
-        public int jumpLength;
+        public short jumpLength;
         private string tileData;
         private int rockTileType;
         private int treeTileType;
@@ -25,7 +25,7 @@ namespace System.AdditionalDataStructures
             this.y = y;
             this.fCost = 0;
             this.gCost = 0;
-            this.parentCoordinates = (0, 0);
+            this.parentCoordinates = (0, 0, 0);
             this.status = 0;
             this.jumpLength = 0;
             this.tileData = "";
@@ -172,13 +172,6 @@ namespace System.AdditionalDataStructures
     {
         #region Variable Declaration
         private List<(T item, int priority)> elements = new List<(T item, int priority)>();
-        private int maxSize;
-        #endregion
-        #region Constructor
-        public CustomPriorityQueue(int capacity)
-        {
-            maxSize = capacity;
-        }
         #endregion
         #region Properties
         public int Count
@@ -189,29 +182,26 @@ namespace System.AdditionalDataStructures
         #region Methods
         public void Enqueue(T item, int priority)
         {
-            if (elements.Count == maxSize)
-                throw new Exception("The priority queue is full.");
-            else
-            {
-                elements.Add((item, priority));
-                elements.Sort((x, y) => x.priority.CompareTo(y.priority));
-            }
+            elements.Add((item, priority));
+            elements.Sort((x, y) => x.priority.CompareTo(y.priority));
+            elements.Reverse();
         }
         public T Dequeue()
         {
             if (IsEmpty() == true)
                 throw new Exception("The priority queue is empty.");
 
-            var item = elements[0];
-            elements.RemoveAt(0);
-            return item.item;
+            var result = elements[elements.Count - 1];
+            elements.RemoveAt(elements.Count - 1);
+            elements.Sort((x, y) => x.priority.CompareTo(y.priority));
+            return result.item;
         }
         public T Peek()
         {
             if (IsEmpty() == true)
                 throw new Exception("The priority queue is empty.");
 
-            return elements[0].item;
+            return elements[elements.Count - 1].item;
         }
         public bool IsEmpty()
         {

@@ -325,5 +325,39 @@ public class TerrainManager : Singleton<TerrainManager>
         yield return new WaitForSeconds(delay);
         ChunkManager.Instance.SetInitialChunks();
     }
+    public byte[,] ToByteGrid()
+    {
+        byte[,] grid = new byte[worldWidth, worldHeight];
+        string[] walkableTileTypes = { GetTileData(TileType.STONE), GetTileData(TileType.DIRT), GetTileData(TileType.GRASS), GetTileData(TileType.ROCK) };
+
+        for (int x = 0; x < worldWidth; x++)
+        {
+            if (map.GetGridObject(x, waterLevel - 2).TileData == GetTileData(TileType.WATER))
+            {
+                grid[x, 0] = 0;
+
+                for (int y = 1; y < worldHeight; y++)
+                    grid[x, y] = 1;
+            }
+            else
+            {
+                for (int y = 0; y < worldHeight; y++)
+                {
+                    Node node = map.GetGridObject(x, y);
+                    if (walkableTileTypes.Contains(node.TileData))
+                        grid[x, y] = 0;
+                    else
+                        grid[x, y] = 1;
+                }
+            }
+            for (int y = 0; y < worldHeight; y++)
+            {
+                if (map.GetGridObject(x, y).TileData == GetTileData(TileType.LILYPAD))
+                    grid[x, y] = 0;
+            }
+        }
+
+        return grid;
+    }
     #endregion
 }

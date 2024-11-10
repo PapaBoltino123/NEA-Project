@@ -7,12 +7,16 @@ using System.AddtionalEventStructures;
 
 public class GameManager : Singleton<GameManager>
 {
-    [SerializeField] GameObject loadingScreen;
     [SerializeField] GameObject player;
     public List<GameObject> activeActors;
+    public Pathfinder pathfinder;
+
     public int volume = 50;
     public float zoom = 1.5f;
+
+    [SerializeField] GameObject loadingScreen;
     List<AsyncOperation> scenesLoading = new List<AsyncOperation>();
+
     public FileManager fileManager;
     private EventBroadcaster eventBroadcaster;
     public GameData savedData = new GameData();
@@ -68,6 +72,7 @@ public class GameManager : Singleton<GameManager>
             fileManager.LoadGame();
         yield return new WaitForSeconds(7f);
         loadingScreen.SetActive(false);
+        pathfinder = new Pathfinder(TerrainManager.Instance.ToByteGrid());
         InGameMenuManager.Instance.pauseButton.SetActive(true);
         scenesLoading.Clear();
     }
