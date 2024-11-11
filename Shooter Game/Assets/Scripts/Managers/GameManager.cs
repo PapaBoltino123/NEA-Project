@@ -7,12 +7,17 @@ using System.AddtionalEventStructures;
 
 public class GameManager : Singleton<GameManager>
 {
-    [SerializeField] GameObject loadingScreen;
     [SerializeField] GameObject player;
     public List<GameObject> activeActors;
+    public Pathfinder pathfinder;
+
     public int volume = 50;
     public float zoom = 1.5f;
+    public float loadProgress = 0;
+
+    [SerializeField] GameObject loadingScreen;
     List<AsyncOperation> scenesLoading = new List<AsyncOperation>();
+
     public FileManager fileManager;
     private EventBroadcaster eventBroadcaster;
     public GameData savedData = new GameData();
@@ -37,14 +42,24 @@ public class GameManager : Singleton<GameManager>
 
     public IEnumerator GetMenuSceneLoadProgress()
     {
+        float startTime = Time.time;
+        float totalTime = 0f;
+        loadProgress = 0f;
         player.SetActive(false);
+        pathfinder = null;
 
         for (int i = 0; i < scenesLoading.Count; i++)
         {
+            float sceneStartTime = Time.time;
+
             while (!scenesLoading[i].isDone)
             {
                 yield return null;
             }
+
+            totalTime += Time.time - sceneStartTime;
+            float elapsedTime = Time.time - startTime;
+            loadProgress = Mathf.Clamp01(elapsedTime / (totalTime + 7f));
         }
 
         loadingScreen.SetActive(false);
@@ -52,12 +67,22 @@ public class GameManager : Singleton<GameManager>
     }
     public IEnumerator GetMainSceneLoadProgress(bool isNewGame)
     {
+        float startTime = Time.time;
+        float totalTime = 0f;
+        loadProgress = 0f;
+
         for (int i = 0; i < scenesLoading.Count; i++)
         {
+            float sceneStartTime = Time.time;
+
             while (!scenesLoading[i].isDone)
             {
                 yield return null;
             }
+
+            totalTime += Time.time - sceneStartTime;
+            float elapsedTime = Time.time - startTime;
+            loadProgress = Mathf.Clamp01(elapsedTime / (totalTime + 7f));
         }
 
         player.SetActive(true);
@@ -68,6 +93,7 @@ public class GameManager : Singleton<GameManager>
             fileManager.LoadGame();
         yield return new WaitForSeconds(7f);
         loadingScreen.SetActive(false);
+        pathfinder = new Pathfinder(TerrainManager.Instance.ToByteGrid());
         InGameMenuManager.Instance.pauseButton.SetActive(true);
         scenesLoading.Clear();
     }

@@ -134,7 +134,7 @@ GameObject:
   - component: {fileID: 720049810}
   m_Layer: 0
   m_Name: Main Camera
-  m_TagString: MainCamera
+  m_TagString: PersistentCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -589,11 +589,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49f7c3a532734f443b7209a5be4e0532, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  loadingScreen: {fileID: 1338549815394791510}
   player: {fileID: 1584742699}
   activeActors: []
   volume: 50
   zoom: 1.5
+  loadingScreen: {fileID: 1338549815394791510}
 --- !u!4 &2055800948
 Transform:
   m_ObjectHideFlags: 0

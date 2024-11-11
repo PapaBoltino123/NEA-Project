@@ -10,9 +10,8 @@ namespace System.AdditionalDataStructures
         private Grid<Node> grid;
         public int fCost, gCost;
         public int x, y;
-        public (ushort parentX, ushort parentY) parentCoordinates;
-        public short parentZ;
-        public byte status;
+        public (int x, int y, int z) parentCoordinates;
+        public int status;
         public short jumpLength;
         private string tileData;
         private int rockTileType;
@@ -26,8 +25,7 @@ namespace System.AdditionalDataStructures
             this.y = y;
             this.fCost = 0;
             this.gCost = 0;
-            this.parentCoordinates = (0, 0);
-            this.parentZ = 0;
+            this.parentCoordinates = (0, 0, 0);
             this.status = 0;
             this.jumpLength = 0;
             this.tileData = "";
@@ -70,7 +68,7 @@ namespace System.AdditionalDataStructures
 
         #endregion
         #region Methods
-        public Node UpdateStatus(byte newStatus)
+        public Node UpdateStatus(int newStatus)
         {
             Node newNode = this;
             newNode.status = newStatus;
@@ -193,11 +191,17 @@ namespace System.AdditionalDataStructures
             if (IsEmpty() == true)
                 throw new Exception("The priority queue is empty.");
 
-            var item = elements[0];
-            elements[0] = elements[elements.Count - 1];
+            var result = elements[elements.Count - 1];
             elements.RemoveAt(elements.Count - 1);
             elements.Sort((x, y) => x.priority.CompareTo(y.priority));
-            return item.item;
+            return result.item;
+        }
+        public T Peek()
+        {
+            if (IsEmpty() == true)
+                throw new Exception("The priority queue is empty.");
+
+            return elements[elements.Count - 1].item;
         }
         public bool IsEmpty()
         {
