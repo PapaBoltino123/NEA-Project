@@ -18,12 +18,12 @@ using UnityEditor;
 public class TerrainManager : Singleton<TerrainManager>
 {
     #region Variable Declaration
-    public int seed;
-    [SerializeField] int smoothness, waterLevel;
+    public int seed; //the number that points to the random generation of the map
+    [SerializeField] int smoothness, waterLevel; //the numbers representing how smooth the map is and how high the water should be
 
-    [NonSerialized] public int chunkWidth = 64;
-    [NonSerialized] public int chunkHeight = 128;
-    [NonSerialized] public int rockCount = 0;
+    [NonSerialized] public int chunkWidth = 64; //the width a chunk 
+    [NonSerialized] public int chunkHeight = 128; //the height of a chunk
+    [NonSerialized] public int rockCount = 0; //the number pointing to what rock tile should be painted
     [NonSerialized] public int treeCount = 0;
     [NonSerialized] public int worldWidth = 8192;
     [NonSerialized] public int worldHeight = 128;

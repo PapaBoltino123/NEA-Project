@@ -150,7 +150,6 @@ public class Pathfinder
 
                 short jumpLength = nodes[currentLoc.xy][currentLoc.z].jumpLength; //obtains the jump length of the current node 
                 short newJumpLength = jumpLength; 
-
                 if (onGround == true) //if grounded, the new nodes jumpLength is equal to 0
                     newJumpLength = 0;
 

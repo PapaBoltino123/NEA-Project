@@ -13,6 +13,7 @@ public class GameManager : Singleton<GameManager>
 
     public int volume = 50;
     public float zoom = 1.5f;
+    public float loadProgress = 0;
 
     [SerializeField] GameObject loadingScreen;
     List<AsyncOperation> scenesLoading = new List<AsyncOperation>();
@@ -41,14 +42,24 @@ public class GameManager : Singleton<GameManager>
 
     public IEnumerator GetMenuSceneLoadProgress()
     {
+        float startTime = Time.time;
+        float totalTime = 0f;
+        loadProgress = 0f;
         player.SetActive(false);
+        pathfinder = null;
 
         for (int i = 0; i < scenesLoading.Count; i++)
         {
+            float sceneStartTime = Time.time;
+
             while (!scenesLoading[i].isDone)
             {
                 yield return null;
             }
+
+            totalTime += Time.time - sceneStartTime;
+            float elapsedTime = Time.time - startTime;
+            loadProgress = Mathf.Clamp01(elapsedTime / (totalTime + 7f));
         }
 
         loadingScreen.SetActive(false);
@@ -56,12 +67,22 @@ public class GameManager : Singleton<GameManager>
     }
     public IEnumerator GetMainSceneLoadProgress(bool isNewGame)
     {
+        float startTime = Time.time;
+        float totalTime = 0f;
+        loadProgress = 0f;
+
         for (int i = 0; i < scenesLoading.Count; i++)
         {
+            float sceneStartTime = Time.time;
+
             while (!scenesLoading[i].isDone)
             {
                 yield return null;
             }
+
+            totalTime += Time.time - sceneStartTime;
+            float elapsedTime = Time.time - startTime;
+            loadProgress = Mathf.Clamp01(elapsedTime / (totalTime + 7f));
         }
 
         player.SetActive(true);
