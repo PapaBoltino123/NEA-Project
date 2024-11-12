@@ -6,20 +6,6 @@ using System.AdditionalDataStructures;
 
 namespace System.Algorithms.Pathfinding
 {
-    public struct Location //a struct used to hold the indexes of the nodes in the nodes array
-    {
-        #region Variable Declaration
-        public int xy;
-        public int z;
-        #endregion
-        #region Constructor
-        public Location(int xy, int z)
-        {
-            this.xy = xy;
-            this.z = z;
-        }
-        #endregion
-    }
     public struct PathRequest
     {
         #region Variable Declaration

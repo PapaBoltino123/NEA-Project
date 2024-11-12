@@ -4,15 +4,13 @@ using UnityEngine;
 
 namespace System.AdditionalDataStructures
 {
-    public struct Node
+    public class Node
     {
         #region Variables Declaration
         private Grid<Node> grid;
         public int fCost, gCost;
         public int x, y;
-        public (int x, int y, int z) parentCoordinates;
-        public int status;
-        public short jumpLength;
+        public Node parentNode;
         private string tileData;
         private int rockTileType;
         private int treeTileType;
@@ -25,9 +23,6 @@ namespace System.AdditionalDataStructures
             this.y = y;
             this.fCost = 0;
             this.gCost = 0;
-            this.parentCoordinates = (0, 0, 0);
-            this.status = 0;
-            this.jumpLength = 0;
             this.tileData = "";
             this.rockTileType = 100;
             this.treeTileType = 100;
@@ -68,12 +63,6 @@ namespace System.AdditionalDataStructures
 
         #endregion
         #region Methods
-        public Node UpdateStatus(int newStatus)
-        {
-            Node newNode = this;
-            newNode.status = newStatus;
-            return newNode;
-        }
         private void UpdateNode()
         {
             this.grid.SetGridObject(this.x, this.y, this);
@@ -221,61 +210,6 @@ namespace System.AdditionalDataStructures
         public void Clear()
         {
             elements.Clear();
-        }
-        #endregion
-    }
-    public class CustomStack<T>
-    {
-        #region Variable Declaration
-        private int maxSize;
-        private List<T> elements = new List<T>();
-        #endregion
-        #region Constructor
-        public CustomStack(int capacity)
-        {
-            maxSize = capacity;
-        }
-        #endregion
-        #region Properties
-        public int Count
-        {
-            get { return elements.Count; }
-        }
-        #endregion
-        #region Methods
-        public void Push(T item)
-        {
-            if (elements.Count == maxSize)
-                throw new Exception("The stack is at maximum capacity");
-            else
-                elements.Add(item);
-        }
-        public T Pop()
-        {
-            if (IsEmpty() == true)
-            {
-                throw new Exception("The stack is empty");
-            }
-
-            T item = elements[elements.Count - 1];
-            elements.RemoveAt(elements.Count - 1);
-            return item;
-        }
-        public T Peek()
-        {
-            if (IsEmpty() == true)
-            {
-                throw new Exception("The stack is empty");
-            }
-
-            return elements[elements.Count - 1];
-        }
-        private bool IsEmpty()
-        {
-            if (elements.Count == 0)
-                return true;
-            else
-                return false;
         }
         #endregion
     }

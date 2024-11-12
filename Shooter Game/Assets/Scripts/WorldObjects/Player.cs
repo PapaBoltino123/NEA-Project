@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 public class Player : Singleton<Player>, Actor
 {
-    [SerializeField] float jumpForce, speed;
+    public float jumpForce, speed;
     [SerializeField] LayerMask groundLayer;
     [SerializeField] Animator weaponController;
 
@@ -39,6 +39,12 @@ public class Player : Singleton<Player>, Actor
 
             if (Input.GetKeyDown(KeyCode.Space))
                 isJumping = true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            Pathfinder p = new Pathfinder();
+            p.FindPath();
         }
     }
     private void FixedUpdate()
