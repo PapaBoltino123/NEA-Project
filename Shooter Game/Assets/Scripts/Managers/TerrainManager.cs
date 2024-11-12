@@ -325,35 +325,42 @@ public class TerrainManager : Singleton<TerrainManager>
         yield return new WaitForSeconds(delay);
         ChunkManager.Instance.SetInitialChunks();
     }
-    public byte[,] ToByteGrid()
+    public byte[,] ReturnMapAsByteGrid()
     {
         byte[,] grid = new byte[worldWidth, worldHeight];
-        string[] walkableTileTypes = { GetTileData(TileType.STONE), GetTileData(TileType.DIRT), GetTileData(TileType.GRASS), GetTileData(TileType.ROCK) };
+        string[] walkableTileTypes = { GetTileData(TileType.STONE), GetTileData(TileType.DIRT), GetTileData(TileType.GRASS), GetTileData(TileType.ROCK), GetTileData(TileType.LILYPAD) };
 
         for (int x = 0; x < worldWidth; x++)
         {
-            if (map.GetGridObject(x, waterLevel - 2).TileData == GetTileData(TileType.WATER))
-            {
-                grid[x, 0] = 0;
-
-                for (int y = 1; y < worldHeight; y++)
-                    grid[x, y] = 1;
-            }
-            else
-            {
-                for (int y = 0; y < worldHeight; y++)
-                {
-                    Node node = map.GetGridObject(x, y);
-                    if (walkableTileTypes.Contains(node.TileData))
-                        grid[x, y] = 0;
-                    else
-                        grid[x, y] = 1;
-                }
-            }
             for (int y = 0; y < worldHeight; y++)
             {
-                if (map.GetGridObject(x, y).TileData == GetTileData(TileType.LILYPAD))
+                Node node = map.GetGridObject(x, y);
+                Node nodeBelow = null;
+                try
+                {
+                    nodeBelow = map.GetGridObject(x, y - 1);
+                }
+                catch { }
+
+                if (walkableTileTypes.Contains(nodeBelow.TileData) && !walkableTileTypes.Contains(node.TileData))
+                    grid[x, y] = 1;
+                else
                     grid[x, y] = 0;
+            }
+            Node waterNode = map.GetGridObject(x, waterLevel - 3);
+
+            if (waterNode.TileData == GetTileData(TileType.WATER))
+            {
+                for (int y = 0; y < waterLevel + 3; y++)
+                {
+                    grid[x, y] = 0;
+                }
+                for (int y = 0; y < waterLevel + 1; y++)
+                {
+                    Node node = map.GetGridObject(x, y);
+                    if (node.TileData == GetTileData(TileType.LILYPAD))
+                        grid[x, y] = 1;
+                }
             }
         }
 

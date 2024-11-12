@@ -9,7 +9,6 @@ public class GameManager : Singleton<GameManager>
 {
     [SerializeField] GameObject player;
     public List<GameObject> activeActors;
-    public Pathfinder pathfinder;
 
     public int volume = 50;
     public float zoom = 1.5f;
@@ -21,6 +20,7 @@ public class GameManager : Singleton<GameManager>
     public FileManager fileManager;
     private EventBroadcaster eventBroadcaster;
     public GameData savedData = new GameData();
+    public byte[,] grid = null;
 
     private void Awake()
     {
@@ -46,7 +46,6 @@ public class GameManager : Singleton<GameManager>
         float totalTime = 0f;
         loadProgress = 0f;
         player.SetActive(false);
-        pathfinder = null;
 
         for (int i = 0; i < scenesLoading.Count; i++)
         {
@@ -91,9 +90,11 @@ public class GameManager : Singleton<GameManager>
             fileManager.NewGame();
         else
             fileManager.LoadGame();
+        //yield return new WaitForSeconds(2f);
+        //grid = TerrainManager.Instance.ReturnMapAsByteGrid();
+        //yield return new WaitForSeconds(5f);
         yield return new WaitForSeconds(7f);
         loadingScreen.SetActive(false);
-        pathfinder = new Pathfinder(TerrainManager.Instance.ToByteGrid());
         InGameMenuManager.Instance.pauseButton.SetActive(true);
         scenesLoading.Clear();
     }
