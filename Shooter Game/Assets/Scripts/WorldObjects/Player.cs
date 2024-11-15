@@ -47,6 +47,10 @@ public class Player : Singleton<Player>, Actor
             Pathfinder p = new Pathfinder();
             p.FindPath();
         }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            Debug.Log(TerrainManager.Instance.ReturnWorldMap().GetGridObject(transform.position));
+        }
     }
     private void FixedUpdate()
     {

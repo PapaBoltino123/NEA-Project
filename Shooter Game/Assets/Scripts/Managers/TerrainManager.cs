@@ -329,37 +329,25 @@ public class TerrainManager : Singleton<TerrainManager>
     {
         byte[,] grid = new byte[worldWidth, worldHeight];
         string[] walkableTileTypes = { GetTileData(TileType.STONE), GetTileData(TileType.DIRT), GetTileData(TileType.GRASS), GetTileData(TileType.ROCK), GetTileData(TileType.LILYPAD) };
+        string[] noCollisionTypes = { GetTileData(TileType.SKY), GetTileData(TileType.FLOWER), GetTileData(TileType.TREE) };
 
         for (int x = 0; x < worldWidth; x++)
         {
             for (int y = 0; y < worldHeight; y++)
             {
-                Node node = map.GetGridObject(x, y);
-                Node nodeBelow = null;
-                try
-                {
-                    nodeBelow = map.GetGridObject(x, y - 1);
-                }
-                catch { }
+                grid[x, y] = 0;
 
-                if (walkableTileTypes.Contains(nodeBelow.TileData) && !walkableTileTypes.Contains(node.TileData))
-                    grid[x, y] = 1;
-                else
-                    grid[x, y] = 0;
-            }
-            Node waterNode = map.GetGridObject(x, waterLevel - 3);
-
-            if (waterNode.TileData == GetTileData(TileType.WATER))
-            {
-                for (int y = 0; y < waterLevel + 3; y++)
-                {
-                    grid[x, y] = 0;
-                }
-                for (int y = 0; y < waterLevel + 1; y++)
+                if (y > 0)
                 {
                     Node node = map.GetGridObject(x, y);
-                    if (node.TileData == GetTileData(TileType.LILYPAD))
-                        grid[x, y] = 1;
+
+                    if (noCollisionTypes.Contains(node.TileData))
+                    {
+                        Node nodeBelow = map.GetGridObject(x, y - 1);
+
+                        if (walkableTileTypes.Contains(nodeBelow.TileData))
+                            grid[x, y] = 1;
+                    }
                 }
             }
         }

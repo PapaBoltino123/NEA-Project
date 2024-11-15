@@ -22,6 +22,8 @@ public class GameManager : Singleton<GameManager>
     public GameData savedData = new GameData();
     public byte[,] grid = null;
 
+    public bool debugging;
+
     private void Awake()
     {
         player.SetActive(false);

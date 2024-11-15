@@ -84,7 +84,7 @@ namespace System.AdditionalDataStructures
         }
         public override string ToString()
         {
-            return tileData;
+            return $"{x}, {y} ";
         }
         #endregion
     }
