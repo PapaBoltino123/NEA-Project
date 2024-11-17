@@ -328,8 +328,8 @@ public class TerrainManager : Singleton<TerrainManager>
     public byte[,] ReturnMapAsByteGrid()
     {
         byte[,] grid = new byte[worldWidth, worldHeight];
-        string[] walkableTileTypes = { GetTileData(TileType.STONE), GetTileData(TileType.DIRT), GetTileData(TileType.GRASS), GetTileData(TileType.ROCK), GetTileData(TileType.LILYPAD) };
-        string[] noCollisionTypes = { GetTileData(TileType.SKY), GetTileData(TileType.FLOWER), GetTileData(TileType.TREE) };
+        string[] walkableTileTypes = { GetTileData(TileType.STONE), GetTileData(TileType.DIRT), GetTileData(TileType.GRASS), GetTileData(TileType.LILYPAD) };
+        string[] noCollisionTypes = { GetTileData(TileType.SKY), GetTileData(TileType.FLOWER), GetTileData(TileType.TREE), GetTileData(TileType.ROCK) };
 
         for (int x = 0; x < worldWidth; x++)
         {

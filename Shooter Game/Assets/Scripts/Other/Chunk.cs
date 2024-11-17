@@ -154,8 +154,6 @@ public class Chunk : MonoBehaviour
                 return mainTiles[0];
             else if (node.TileData == "0101")
                 return mainTiles[5];
-            else if (node.TileData == "1000")
-                return mainTiles[0];
             else
                 return null;
         }

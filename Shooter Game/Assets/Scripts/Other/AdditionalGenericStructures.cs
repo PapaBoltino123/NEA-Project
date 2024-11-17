@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace System.AdditionalDataStructures
@@ -7,42 +8,45 @@ namespace System.AdditionalDataStructures
     public class Node
     {
         #region Variables Declaration
-        private Grid<Node> grid;
-        public int fCost, gCost;
+        private Grid<Node> grid; //pathfinding variables
+        public float fCost, gCost, hCost;
         public int x, y;
         public Node parentNode;
-        private string tileData;
+        public float tentativeGCost;
+        public NodeMovementType type;
+
+        private string tileData; //terrain generation variables
         private int rockTileType;
         private int treeTileType;
         #endregion
         #region Constructor
         public Node(Grid<Node> grid, int x, int y)
         {
-            this.grid = grid;
+            this.grid = grid; //sets initial node values
             this.x = x;
             this.y = y;
-            this.fCost = 0;
             this.gCost = 0;
+            this.hCost = 0;
             this.tileData = "";
             this.rockTileType = 100;
             this.treeTileType = 100;
-            this.IsRock = false;
-            this.IsTree = false;
+            this.tentativeGCost = 0;
+            this.type = NodeMovementType.NONE;
         }
         #endregion 
         #region Properties
         public string TileData
         {
-            get { return this.tileData; }
+            get { return this.tileData; } 
             set
             {
-                this.tileData = value;
+                this.tileData = value; //when tiledata changes, update map
                 UpdateNode();
             }
         }
         public int RockTileType
         {
-            get { return this.rockTileType; }
+            get { return this.rockTileType; }  //when tiledata changes, update map
             set
             {
                 this.rockTileType = value;
@@ -51,40 +55,26 @@ namespace System.AdditionalDataStructures
         }
         public int TreeTileType
         {
-            get { return this.treeTileType; }
+            get { return this.treeTileType; }  //when tiledata changes, update map
             set
             {
                 this.treeTileType = value;
                 UpdateNode();
             }
         }
-        public bool IsRock { get; private set; }
-        public bool IsTree { get; private set; }
-
         #endregion
         #region Methods
-        private void UpdateNode()
+        public void UpdateNode()
         {
-            this.grid.SetGridObject(this.x, this.y, this);
-            if (this.tileData == "0111")
-            {
-                this.IsTree = true;
-                this.IsRock = false;
-            }
-            else if (this.tileData == "1000")
-            {
-                this.IsRock = true;
-                this.IsTree = false;
-            }
-            else
-            {
-                this.IsRock = false;
-                this.IsTree = false;
-            }
+            this.grid.SetGridObject(this.x, this.y, this); //updates grid node if any changes are made to the node 
+        }
+        public void CalculateFCost()
+        {
+            this.fCost = this.gCost + this.hCost; //calculates the final cost of the node
         }
         public override string ToString()
         {
-            return $"{x}, {y} ";
+            return $"{x}, {y} "; //outputs node coords for debugging
         }
         #endregion
     }
@@ -160,7 +150,7 @@ namespace System.AdditionalDataStructures
     public class CustomPriorityQueue<T>
     {
         #region Variable Declaration
-        private List<(T item, int priority)> elements = new List<(T item, int priority)>();
+        private List<(T item, float priority)> elements = new List<(T item, float priority)>();
         #endregion
         #region Properties
         public int Count
@@ -169,7 +159,7 @@ namespace System.AdditionalDataStructures
         }
         #endregion
         #region Methods
-        public void Enqueue(T item, int priority)
+        public void Enqueue(T item, float priority)
         {
             elements.Add((item, priority));
             elements.Sort((x, y) => x.priority.CompareTo(y.priority));
@@ -183,6 +173,7 @@ namespace System.AdditionalDataStructures
             var result = elements[elements.Count - 1];
             elements.RemoveAt(elements.Count - 1);
             elements.Sort((x, y) => x.priority.CompareTo(y.priority));
+            elements.Reverse();
             return result.item;
         }
         public T Peek()
@@ -210,6 +201,15 @@ namespace System.AdditionalDataStructures
         public void Clear()
         {
             elements.Clear();
+        }
+        public bool Contains(T item)
+        {
+            if (IsEmpty() == true)
+                throw new Exception("The priority queue is empty.");
+
+            List<T> values = elements.Select(x => x.item).ToList();
+
+            return values.Contains(item);
         }
         #endregion
     }
@@ -278,8 +278,19 @@ namespace System.AdditionalDataStructures
     }
     public enum SceneType
     {
-        MANAGER = 0,
+        MANAGER = 0, //the scene is either the persisten scene which holds all the managers and is permanently active, the menu scene or the main game scene
         TITLESCREEN = 1,
         MAINGAME = 2
+    }
+    public enum PlayerState
+    {
+        ALIVE,
+        DEAD
+    }
+    public enum NodeMovementType
+    {
+        NONE, 
+        WALK,
+        JUMP
     }
 }

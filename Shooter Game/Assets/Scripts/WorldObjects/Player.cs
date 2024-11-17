@@ -1,15 +1,21 @@
 using System;
+using System.AdditionalDataStructures;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
 
 public class Player : Singleton<Player>, Actor
 {
     public float jumpForce, speed;
-    [SerializeField] LayerMask groundLayer;
+    public LayerMask groundLayer;
     [SerializeField] Animator weaponController;
+
+    [SerializeField] Tilemap test;
+    [SerializeField] TileBase tile;
 
     [NonSerialized] public Rigidbody2D rb = new Rigidbody2D();
     private BoxCollider2D boxCollider;
@@ -42,14 +48,10 @@ public class Player : Singleton<Player>, Actor
                 isJumping = true;
         }
 
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            Pathfinder p = new Pathfinder();
-            p.FindPath();
-        }
         if (Input.GetKeyDown(KeyCode.P))
         {
-            Debug.Log(TerrainManager.Instance.ReturnWorldMap().GetGridObject(transform.position));
+            Node node = TerrainManager.Instance.ReturnWorldMap().GetGridObject(transform.position);
+            Debug.Log(node);
         }
     }
     private void FixedUpdate()
@@ -91,9 +93,4 @@ public class Player : Singleton<Player>, Actor
         else
             return false;
     }
-}
-public enum PlayerState
-{
-    ALIVE, 
-    DEAD
 }
