@@ -205,6 +205,53 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1265423576
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1265423578}
+  - component: {fileID: 1265423577}
+  m_Layer: 0
+  m_Name: ZombieController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1265423577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1265423576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d09443e624d67d4419c50f8b290911f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speed: 3
+  jumpForce: 5
+  zombiePrefab: {fileID: 0}
+--- !u!4 &1265423578
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1265423576}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.019693116, y: -0.097651646, z: 0.06416052}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1584742699
 GameObject:
   m_ObjectHideFlags: 0
@@ -405,6 +452,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   weaponController: {fileID: 1865992677}
+  test: {fileID: 0}
+  tile: {fileID: 0}
   playerState: 0
 --- !u!1 &1651998653
 GameObject:
@@ -593,7 +642,13 @@ MonoBehaviour:
   activeActors: []
   volume: 50
   zoom: 1.5
+  loadProgress: 0
   loadingScreen: {fileID: 1338549815394791510}
+  savedData:
+    playerX: -10
+    playerY: -10
+    seed: 100000
+  debugging: 0
 --- !u!4 &2055800948
 Transform:
   m_ObjectHideFlags: 0
@@ -1010,3 +1065,4 @@ SceneRoots:
   - {fileID: 1651998655}
   - {fileID: 2350924088467827122}
   - {fileID: 1584742701}
+  - {fileID: 1265423578}

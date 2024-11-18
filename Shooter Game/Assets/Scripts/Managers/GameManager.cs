@@ -92,10 +92,10 @@ public class GameManager : Singleton<GameManager>
             fileManager.NewGame();
         else
             fileManager.LoadGame();
-        //yield return new WaitForSeconds(2f);
-        //grid = TerrainManager.Instance.ReturnMapAsByteGrid();
-        //yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(7f);
+        yield return new WaitForSeconds(5f);
+        ZombieManager.Instance.byteMap = TerrainManager.Instance.ReturnMapAsByteGrid();
+        ZombieManager.Instance.nodeMap = TerrainManager.Instance.ReturnWorldMap();
+        yield return new WaitForSeconds(1f);
         loadingScreen.SetActive(false);
         InGameMenuManager.Instance.pauseButton.SetActive(true);
         scenesLoading.Clear();

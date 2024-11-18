@@ -9,14 +9,16 @@ using Unity.VisualScripting;
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using System;
-using static UnityEngine.GraphicsBuffer;
 using UnityEngine.UIElements;
 using UnityEngine.WSA;
+using System.ComponentModel.Design;
 
-public class Pathfinder
+public class Pathfinder : MonoBehaviour
 {
-    Grid<Node> nodeMap = null;
-    byte[,] byteMap = null;
+    private Grid<Node> nodeMap = null;
+    private byte[,] byteMap = null;
+    private Thread pathfindingThread;
+
     CustomPriorityQueue<Node> open = null;
     List<Node> closed = null;
     float travelWeight = 0;
@@ -34,102 +36,104 @@ public class Pathfinder
         this.speed = speed;
         this.jumpForce = jumpForce;
     }
-    public List<Node> FindPath(int startX, int startY, int endX, int endY)
+    public void FindPath(int startX, int startY, int endX, int endY, Zombie.PathFoundCallback pathFoundCallback)
     {
-        Node startNode = nodeMap.GetGridObject(startX, startY);
-        Node endNode = nodeMap.GetGridObject(endX, endY);
-        List<Node> neighbours = new List<Node>();
-
-        if (closed != null) //initialisation of key aspects of the pathfinding
-            closed.Clear();
-        else
-            closed = new List<Node>();
-
-        if (open != null)
-            open.Clear();
-        else
-            open = new CustomPriorityQueue<Node>();
-
-        for (int targetX = 0; targetX < byteMap.GetLength(0); targetX++) //obtains the coordinates of the nodes where the path could pass through using linq
+        pathfindingThread = new Thread(() =>
         {
-            int targetY = Enumerable.Range(0, byteMap.GetLength(1))
-                .Select(i => byteMap[targetX, i])
-                .ToList()
-                .FindIndex(n => n == 1);
+            Node startNode = nodeMap.GetGridObject(startX, startY);
+            Node endNode = nodeMap.GetGridObject(endX, endY);
+            List<Node> neighbours = new List<Node>();
 
-            landingPoints.Add(new Vector2Int(targetX, targetY));
-        }
+            if (closed != null) //initialisation of key aspects of the pathfinding
+                closed.Clear();
+            else
+                closed = new List<Node>();
 
-        for (int x = 0; x < nodeMap.Width; x++)
-        {
-            for (int y = 0; y < nodeMap.Height; y++)
+            if (open != null)
+                open.Clear();
+            else
+                open = new CustomPriorityQueue<Node>();
+
+            for (int targetX = 0; targetX < byteMap.GetLength(0); targetX++) //obtains the coordinates of the nodes where the path could pass through using linq
             {
-                Node node = nodeMap.GetGridObject(x, y); //sets the initial values of all the nodes in the grid
-                node.gCost = int.MaxValue;
-                node.CalculateFCost();
-                node.parentNode = null;
-                node.UpdateNode();
+                int targetY = Enumerable.Range(0, byteMap.GetLength(1))
+                    .Select(i => byteMap[targetX, i])
+                    .ToList()
+                    .FindIndex(n => n == 1);
+
+                landingPoints.Add(new Vector2Int(targetX, targetY));
             }
-        }
 
-        float maxWorldJumpWidth = CalculateMaxJumpWidth();
-        int maxGridJumpWidth = ConvertToGrid(maxWorldJumpWidth); //calculates the maximum distance that can be jumped at the zombie's jumpforce and speed and converts into the grid units
-        float maxWorldJumpHeight = CalculateMaxJumpHeight();
-        int maxGridJumpHeight = ConvertToGrid(maxWorldJumpHeight) - 1; //calculates the maximum height that can be jumped at the zombie's jumpforce and speed and converts into the grid units
-
-        startNode.gCost = 0; //initial distance travelled is 0
-        startNode.hCost = CalculateHeurisicCost(startNode, endNode); //calculates heuristic cost to goal using euclidean distance and weights
-        startNode.CalculateFCost(); //calculates final cost
-        open.Enqueue(startNode, startNode.fCost);
-
-        while (open.Count > 0)
-        {
-            Node currentNode = open.Dequeue(); //obtains the node with the lowest fCost
-
-            if (currentNode == endNode) //if the node is the target node a path has been found
-                found = true;
-
-            closed.Add(currentNode); //adds node to closed list
-
-            neighbours = FindNeighbours(neighbours, currentNode, 0, maxGridJumpWidth, maxGridJumpHeight); //obtains neighbours of current node
-            foreach (var node in neighbours)
+            for (int x = 0; x < nodeMap.Width; x++)
             {
-                if (closed.Contains(node))
-                    continue;
-
-                float tentativeGCost = currentNode.gCost + node.tentativeGCost;
-
-                if (tentativeGCost < node.gCost)
+                for (int y = 0; y < nodeMap.Height; y++)
                 {
-                    node.parentNode = currentNode;
-                    node.gCost = tentativeGCost;
-                    node.hCost = CalculateHeurisicCost(node, endNode);
+                    Node node = nodeMap.GetGridObject(x, y); //sets the initial values of all the nodes in the grid
+                    node.gCost = int.MaxValue;
                     node.CalculateFCost();
-                }
-
-                if (!open.Contains(node))
-                {
-                    open.Enqueue(node, node.fCost);
+                    node.parentNode = null;
+                    node.UpdateNode();
                 }
             }
 
-            if (found == true)
+            float maxWorldJumpWidth = CalculateMaxJumpWidth();
+            int maxGridJumpWidth = ConvertToGrid(maxWorldJumpWidth); //calculates the maximum distance that can be jumped at the zombie's jumpforce and speed and converts into the grid units
+            float maxWorldJumpHeight = CalculateMaxJumpHeight();
+            int maxGridJumpHeight = ConvertToGrid(maxWorldJumpHeight) - 1; //calculates the maximum height that can be jumped at the zombie's jumpforce and speed and converts into the grid units
+
+            startNode.gCost = 0; //initial distance travelled is 0
+            startNode.hCost = CalculateHeurisicCost(startNode, endNode); //calculates heuristic cost to goal using euclidean distance and weights
+            startNode.CalculateFCost(); //calculates final cost
+            open.Enqueue(startNode, startNode.fCost);
+
+            while (open.Count > 0)
             {
-                List<Node> path = new List<Node>();
-                path.Add(endNode);
-                Node cNode = endNode;
+                Node currentNode = open.Dequeue(); //obtains the node with the lowest fCost
 
-                while (cNode.parentNode != null)
+                if (currentNode == endNode) //if the node is the target node a path has been found
+                    found = true;
+
+                closed.Add(currentNode); //adds node to closed list
+
+                neighbours = FindNeighbours(neighbours, currentNode, 0, maxGridJumpWidth, maxGridJumpHeight); //obtains neighbours of current node
+                foreach (var node in neighbours)
                 {
-                    path.Add(cNode.parentNode);
-                    cNode = cNode.parentNode;
+                    if (closed.Contains(node))
+                        continue;
+
+                    float tentativeGCost = currentNode.gCost + node.tentativeGCost;
+
+                    if (tentativeGCost < node.gCost)
+                    {
+                        node.parentNode = currentNode;
+                        node.gCost = tentativeGCost;
+                        node.hCost = CalculateHeurisicCost(node, endNode);
+                        node.CalculateFCost();
+                    }
+
+                    if (!open.Contains(node))
+                    {
+                        open.Enqueue(node, node.fCost);
+                    }
                 }
 
-                return path;
-            }
-        }
+                if (found == true)
+                {
+                    List<Node> path = new List<Node>();
+                    path.Add(endNode);
+                    Node cNode = endNode;
 
-        return null;
+                    while (cNode.parentNode != null)
+                    {
+                        path.Add(cNode.parentNode);
+                        cNode = cNode.parentNode;
+                    }
+
+                    MainThreadDispatcher.Instance.EnqueueAction(() => pathFoundCallback(path));
+                }
+            }
+        });
+        pathfindingThread.Start();
     }
     private float CalculateMaxJumpWidth()
     {
@@ -371,6 +375,13 @@ public class Pathfinder
 
         CHECK_END:
             return neighbours;
+    }
+    private void OnApplicationQuit()
+    {
+        if (pathfindingThread != null && pathfindingThread.IsAlive)
+        {
+            pathfindingThread.Abort();
+        }
     }
 }
 
