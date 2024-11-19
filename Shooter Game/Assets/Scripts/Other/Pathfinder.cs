@@ -28,6 +28,7 @@ public class Pathfinder : MonoBehaviour
     float jumpForce = 0;
     float cellSize = TerrainManager.Instance.cellSize;
     List<Vector2> landingPoints = new List<Vector2>();
+    private static SynchronizationContext mainThreadContext;
 
     public Pathfinder(Grid<Node> nodeMap, byte[,] byteMap, float speed, float jumpForce)
     {
@@ -35,6 +36,7 @@ public class Pathfinder : MonoBehaviour
         this.byteMap = byteMap;
         this.speed = speed;
         this.jumpForce = jumpForce;
+        mainThreadContext = SynchronizationContext.Current;
     }
     public void FindPath(int startX, int startY, int endX, int endY, Zombie.PathFoundCallback pathFoundCallback)
     {
@@ -95,7 +97,8 @@ public class Pathfinder : MonoBehaviour
 
                 closed.Add(currentNode); //adds node to closed list
 
-                neighbours = FindNeighbours(neighbours, currentNode, 0, maxGridJumpWidth, maxGridJumpHeight); //obtains neighbours of current node
+               neighbours = FindNeighbours(currentNode);
+
                 foreach (var node in neighbours)
                 {
                     if (closed.Contains(node))
@@ -109,6 +112,7 @@ public class Pathfinder : MonoBehaviour
                         node.gCost = tentativeGCost;
                         node.hCost = CalculateHeurisicCost(node, endNode);
                         node.CalculateFCost();
+                        node.UpdateNode();
                     }
 
                     if (!open.Contains(node))
@@ -128,24 +132,24 @@ public class Pathfinder : MonoBehaviour
                         path.Add(cNode.parentNode);
                         cNode = cNode.parentNode;
                     }
-
-                    MainThreadDispatcher.Instance.EnqueueAction(() => pathFoundCallback(path));
+                    path.Reverse();
+                    mainThreadContext.Post(_ => pathFoundCallback(path), null);
                 }
             }
         });
         pathfindingThread.Start();
     }
-    private float CalculateMaxJumpWidth()
+    public float CalculateMaxJumpWidth()
     {
         float maxDistance = (2 * speed * jumpForce) / gravity; //formula for calculating max distance jumped
         return maxDistance;
     }
-    private float CalculateMaxJumpHeight()
+    public float CalculateMaxJumpHeight()
     {
         float maxHeight = (jumpForce * jumpForce) / (2 * gravity); //formula for calculating max height jumped
         return maxHeight;
     }
-    private int ConvertToGrid(float n)
+    public int ConvertToGrid(float n)
     {
         return (int)System.Math.Floor(n / cellSize); //the conversion to grid units which is what the algorithm uses to find path
     }
@@ -187,194 +191,389 @@ public class Pathfinder : MonoBehaviour
 
         return distance * penalty;
     }
-    private List<Node> FindNeighbours(List<Node> neighbourList, Node startNode, int root0, int root1, int maxHeight)
+    //public List<Node> FindNeighbours(List<Node> neighbourList, Node startNode, int root0, int root1, int maxHeight)
+    //{
+    //    List<Node> neighbours = neighbourList; //sets all iniial values and initialises solution nodes list
+    //    List<Node> solutionNodes = new List<Node>();
+    //    float a, b;
+    //    Vector2 r0 = new Vector2(root0 + startNode.x, startNode.y);
+    //    Vector2 r1 = new Vector2(root1 + startNode.x, startNode.y);
+
+    //    Vector2 turningPoint = new Vector2((r0.x + r1.x) / 2, maxHeight + startNode.y); //the turning point is at the max height and inbetween the two roots
+
+    //    Debug.Log(turningPoint);
+
+    //    for (int i = 0; i != byteMap.GetLength(1); i++)
+    //    {
+    //        List<Vector2> pointsToAdd = new List<Vector2>();
+    //        try
+    //        {
+    //            float timeSquared = (2 * (turningPoint.y - i)) / gravity; //calculates the time taken to fall from a point for each y value on terrain
+    //            if (timeSquared < 0) //cannot root a negative
+    //                break;
+
+    //            float time = MathF.Sqrt(timeSquared); //calculates time and substitues into the horizontal motion formula (x = current x coord + horizontal velocity * time)
+    //            float x = turningPoint.x + (speed * CheckDirection(root1) * time);
+
+    //            int roundedDownX = (int)(System.Math.Floor((double)x)); //calculates bounds
+    //            int roundedUpX = (int)(System.Math.Ceiling((double)x));
+
+    //            foreach (var point in landingPoints)
+    //            {
+    //                if ((int)point.y == i)
+    //                {
+    //                    if (((int)point.x >= roundedDownX) && ((int)point.x <= roundedUpX))
+    //                    {
+    //                        pointsToAdd.Add(point); //if the solution is within the bounds add it to points to add
+    //                    }
+    //                }
+    //            }
+
+    //            if (pointsToAdd.Count > 1)
+    //            {
+    //                if (System.Math.Abs(CheckDirection(root1)) == CheckDirection(root1))
+    //                {
+    //                    pointsToAdd.Sort((a, b) => a.x.CompareTo(b.x));
+    //                }
+    //                else
+    //                {
+    //                    pointsToAdd.Sort((a, b) => a.x.CompareTo(b.x));
+    //                    pointsToAdd.Reverse();
+    //                }
+    //            }
+    //            if (pointsToAdd.Count > 0)
+    //            {
+    //                Node node = nodeMap.GetGridObject((int)pointsToAdd[0].x, (int)pointsToAdd[0].y);
+    //                solutionNodes.Add(node);
+    //            }
+    //        }
+    //        catch
+    //        {
+    //            break;
+    //        }
+    //    }
+
+
+    //    solutionNodes = solutionNodes.OrderByDescending(g => g.y).ToList(); //as the parabola has the potential to intersect multiple landing points, sort the nodes from biggest y value to smallest 
+
+    //    try
+    //    {
+    //        neighbours.Add(solutionNodes[1]); //i found a bug where nodes at corners where the terrain drops can sometimes result in the node not being grounded, so finding the next intersecion after that if possible was the fix here
+    //    }
+    //    catch
+    //    {
+    //        try
+    //        {
+    //            neighbours.Add(solutionNodes[0]); //of course, if this is not possible add the only node in the list
+    //        }
+    //        catch { } //there are no soluion nodes at this point
+    //    }
+
+    //    try
+    //    {
+    //        neighbours[neighbours.Count - 1].type = NodeMovementType.JUMP;
+    //        neighbours[neighbours.Count - 1].tentativeGCost = CalculateGCost(startNode, neighbours[neighbours.Count - 1], NodeMovementType.JUMP);
+    //    }
+    //    catch { }
+
+    //    if (System.Math.Abs(root1) == root1) //if the max distance is posittive set it to negative
+    //    {
+    //        int negativeRoot1 = -root1;
+    //        neighbours = FindNeighbours(neighbours, startNode, root0, negativeRoot1, maxHeight); //use of recursion for calculating jumping negative values
+    //    }
+
+    //    neighbours = CheckHorizontals(neighbours, CheckDirection(root1), startNode); //check nodes when moving one left and right 
+
+    //    return neighbours; //return neighbours list
+    //}
+    //private List<Node> CheckHorizontals(List<Node> neighboursList, int direction, Node startNode)
+    //{
+    //    List<Node> neighbours = neighboursList;
+    //    Node nextNode = nodeMap.GetGridObject(startNode.x + direction, startNode.y); //gets the node either left or righ depending on positive or negative direction
+
+    //    int groundIndex = Enumerable.Range(0, byteMap.GetLength(1))
+    //        .Select(i => byteMap[nextNode.x, i])
+    //        .ToList()
+    //        .FindIndex(n => n == 1); //finds y coordinates of the landing node at the next node x value
+
+    //    if (groundIndex > startNode.y) //if terrain increases then walking is not possible so skip
+    //        goto CHECK_END;
+    //    else
+    //    {
+    //        List<Node> solutionNodes = new List<Node>();
+    //        for (int i = 0; i != byteMap.GetLength(1); i++)
+    //        {
+    //            List<Vector2> pointsToAdd = new List<Vector2>();
+    //            try
+    //            {
+    //                float timeSquared = (2 * (nextNode.y - i)) / gravity; //calculates the time taken to fall from a point for each y value on terrain
+    //                if (timeSquared < 0) //cannot root a negative
+    //                    break;
+
+    //                float time = MathF.Sqrt(timeSquared); //calculates time and substitues into the horizontal motion formula (x = current x coord + horizontal velocity * time)
+    //                float x = nextNode.x + (speed * direction * time);
+
+    //                int roundedDownX = (int)(System.Math.Floor((double)x)); //calculates bounds
+    //                int roundedUpX = (int)(System.Math.Ceiling((double)x));
+
+    //                foreach (var point in landingPoints)
+    //                {
+    //                    if ((int)point.y == i)
+    //                    {
+    //                        if (((int)point.x >= roundedDownX) && ((int)point.x <= roundedUpX))
+    //                        {
+    //                            pointsToAdd.Add(point); //if the solution is within the bounds add it to points to add
+    //                        }
+    //                    }
+    //                }
+
+    //                if (pointsToAdd.Count > 1) //this follows the exact process for finding landing nodes when jumping
+    //                {
+    //                    if (System.Math.Abs(direction) == direction)
+    //                    {
+    //                        pointsToAdd.Sort((a, b) => a.x.CompareTo(b.x));
+    //                    }
+    //                    else
+    //                    {
+    //                        pointsToAdd.Sort((a, b) => a.x.CompareTo(b.x));
+    //                        pointsToAdd.Reverse();
+    //                    }
+    //                }
+    //                if (pointsToAdd.Count > 0)
+    //                {
+    //                    Node node = nodeMap.GetGridObject((int)pointsToAdd[0].x, (int)pointsToAdd[0].y);
+    //                    solutionNodes.Add(node);
+    //                }
+    //            }
+    //            catch
+    //            {
+    //                break;
+    //            }
+    //        }
+
+    //        solutionNodes = solutionNodes.OrderByDescending(g => g.y).ToList();
+
+    //        try
+    //        {
+    //            neighbours.Add(solutionNodes[1]); //i found a bug where nodes at corners where the terrain drops can sometimes result in the node not being grounded, so finding the next intersecion after that if possible was the fix here
+    //        }
+    //        catch
+    //        {
+    //            try
+    //            {
+    //                neighbours.Add(solutionNodes[0]); //of course, if this is not possible add the only node in the list
+    //            }
+    //            catch { } //there are no soluion nodes at this point
+    //        }
+
+    //        try
+    //        {
+    //            neighbours[neighbours.Count - 1].type = NodeMovementType.WALK;
+    //            neighbours[neighbours.Count - 1].tentativeGCost = CalculateGCost(startNode, neighbours[neighbours.Count - 1], NodeMovementType.WALK);
+    //        }
+    //        catch { }
+    //    }
+
+    //    CHECK_END:
+    //        return neighbours;
+    //}
+    private List<Node> FindNeighbours(Node currentNode)
     {
-        List<Node> neighbours = neighbourList; //sets all iniial values and initialises solution nodes list
-        List<Node> solutionNodes = new List<Node>();
-        float a, b;
-        Vector2 r0 = new Vector2(root0, 0);
-        Vector2 r1 = new Vector2(root1, 0);
+        List<Node> neighbours = new List<Node>();
+        int currentX = currentNode.x;
+        int currentY = currentNode.y;
 
-        Vector2 turningPoint = new Vector2((root0 + root1) / 2, maxHeight); //the turning point is at the max height and inbetween the two roots
-        Vector2Int offset = new Vector2Int(startNode.x, startNode.y); //the offset is how far 0, 0 is in relation to the starting nodes so that the parabola jump curve generated can have c = 0
-                                                                      //and then be converted to grid coords
-       
-        a = turningPoint.y / ((turningPoint.x - r0.x) * (turningPoint.x - r1.x)); //as y = a(x - root 0)(x - root1), a = y / (x - root0) * (x - root1)
-        b = (turningPoint.y - (a * (turningPoint.x * turningPoint.x))) / (turningPoint.x); //subbing in a into y = ax^2 + bx, b = (y - ax^2) / x
+        // Maximum jump dimensions
+        float maxWorldJumpWidth = CalculateMaxJumpWidth();
+        int maxGridJumpWidth = ConvertToGrid(maxWorldJumpWidth);
+        float maxWorldJumpHeight = CalculateMaxJumpHeight();
+        int maxGridJumpHeight = ConvertToGrid(maxWorldJumpHeight);
 
-        for (int i = 0; i != byteMap.GetLength(1); i++)
+        // Try moving left and right, simulating fall after walking horizontally
+        for (int direction = -1; direction <= 1; direction += 2)
         {
-            List<Vector2> pointsToAdd = new List<Vector2>(); //points to add to solution nodes
-            try
+            int targetX = currentX + direction;
+            int targetY = currentY;
+
+            // Ensure within grid bounds
+            if (targetX < 0 || targetX >= byteMap.GetLength(0))
+                continue;
+
+            // Check if the position directly to the side is walkable
+            if (byteMap[targetX, targetY] == 1)
             {
-                float x, y;
+                // Add horizontal neighbor
+                neighbours.Add(nodeMap.GetGridObject(targetX, targetY));
+                neighbours.Last().type = NodeMovementType.WALK;
+                neighbours.Last().tentativeGCost = CalculateGCost(currentNode, neighbours.Last(), NodeMovementType.WALK);
 
-                y = i - offset.y; //gets y in curve coords rather than grid coords
-                (float x1, float x2) solutions = QuadraticFormula(a, b, y); //obtains xn solutions
-
-                if (System.Math.Abs(root1) == root1) //if the max distance is positive, return the biggest soluion
-                    x = (float)System.Math.Max((double)solutions.x1, (double)solutions.x2);
-                else //else return the smallest solution
-                    x = (float)System.Math.Min((double)solutions.x1, (double)solutions.x2);
-
-                int roundedDownX = (int)(System.Math.Floor((double)x + offset.x)); //calculates tthe upper and lower bounds of x in grid coords
-                int roundedUpX = (int)(System.Math.Ceiling((double)x) + offset.x);
-
-                foreach (var point in landingPoints)
+                // Simulate fall if there’s a void below the walked-to position
+                if (targetY > 0 && byteMap[targetX, targetY - 1] == 0)
                 {
-                    if ((int)point.y == i)
+                    (int? fallX, int? fallY) = SimulateFall(targetX, targetY, 0);
+
+                    if (fallX.HasValue && fallY.HasValue)
                     {
-                        if (((int)point.x >= roundedDownX) && ((int)point.x <= roundedUpX)) //if the solution is within the bounds add it to points to add
-                        {
-                            pointsToAdd.Add(point);
-                        }
+                        neighbours.Add(nodeMap.GetGridObject(fallX.Value, fallY.Value));
+                        neighbours.Last().type = NodeMovementType.WALK;
+                        neighbours.Last().tentativeGCost = CalculateGCost(currentNode, neighbours.Last(), NodeMovementType.WALK);
                     }
                 }
-
-                if (pointsToAdd.Count > 1) //a bug occured that resulted in more solutions than intended
-                {
-                    if (System.Math.Abs(root1) == root1) //if max distance is positive sort nodes smallest x value to biggest
-                    {
-                        pointsToAdd.Sort((a, b) => a.x.CompareTo(b.x));
-                    }
-                    else
-                    {
-                        pointsToAdd.Sort((a, b) => a.x.CompareTo(b.x)); //else sort nodes largest x value to smallest
-                        pointsToAdd.Reverse();
-                    }
-                }
-                if (pointsToAdd.Count > 0)
-                {
-                    Node node = nodeMap.GetGridObject((int)pointsToAdd[0].x, (int)pointsToAdd[0].y);
-                    solutionNodes.Add(node); //add the node to solution nodes
-                }
-            }
-            catch
-            {
-                break; //if no real roots, break the loop
             }
         }
 
-        solutionNodes = solutionNodes.OrderByDescending(g => g.y).ToList(); //as the parabola has the potential to intersect multiple landing points, sort the nodes from biggest y value to smallest 
-        Node toAdd = null;
+        // Try jumping left and right
+        for (int direction = -1; direction <= 1; direction += 2)
+        {
+            int jumpTargetX = currentX + direction;
+            float initialVelocityX = direction * speed;
+            float initialVelocityY = jumpForce;
 
-        try
-        {
-            toAdd = solutionNodes[1]; //i found a bug where nodes at corners where the terrain drops can sometimes result in the node not being grounded, so finding the next intersecion after that if possible was the fix here
-        }
-        catch
-        {
-            try
+            // Simulate the parabolic jump
+            (int? landingX, int? landingY) = SimulateJump(
+                currentX,
+                currentY,
+                initialVelocityX,
+                initialVelocityY
+            );
+
+            if (landingX.HasValue && landingY.HasValue)
             {
-                toAdd = solutionNodes[1]; //of course, if this is not possible add the only node in the list
+                // Add valid jump landing as a neighbor
+                neighbours.Add(nodeMap.GetGridObject(landingX.Value, landingY.Value));
+                neighbours.Last().type = NodeMovementType.JUMP;
+                neighbours.Last().tentativeGCost = CalculateGCost(currentNode, neighbours.Last(), NodeMovementType.JUMP);
             }
-            catch { } //there are no soluion nodes at this point
         }
 
-        toAdd.type = NodeMovementType.JUMP;
-        toAdd.tentativeGCost = CalculateGCost(startNode, toAdd, toAdd.type);
-        neighbours.Add(toAdd);
-        neighbours.RemoveAll(n => n == null);
-
-        if (System.Math.Abs(root1) == root1) //if the max distance is posittive set it to negative
-        {
-            int negativeRoot1 = -root1;
-            neighbours = FindNeighbours(neighbours, startNode, root0, negativeRoot1, maxHeight); //use of recursion for calculating jumping negative values
-        }
-
-        neighbours = CheckHorizontals(neighbours, CheckDirection(root1), startNode); //check nodes when moving one left and right 
-
-        return neighbours; //return neighbours list
+        return neighbours;
     }
-    private List<Node> CheckHorizontals(List<Node> neighboursList, int direction, Node startNode)
+
+    /// <summary>
+    /// Simulates a parabolic jump to determine where the character will land, accounting for terrain collisions.
+    /// </summary>
+    ///
+    private (int? x, int? y) SimulateJump(int startX,int startY,float initialVelocityX,float initialVelocityY)
     {
-        List<Node> neighbours = neighboursList;
-        Node nextNode = nodeMap.GetGridObject(startNode.x + direction, startNode.y); //gets the node either left or righ depending on positive or negative direction
+        float timeStep = 0.05f; // Fine granularity for simulation
+        float time = 0f;
 
-        int groundIndex = Enumerable.Range(0, byteMap.GetLength(1))
-            .Select(i => byteMap[nextNode.x, i])
-            .ToList()
-            .FindIndex(n => n == 1); //finds y coordinates of the landing node at the next node x value
+        float startWorldX = startX * cellSize;
+        float startWorldY = startY * cellSize;
 
-        if (groundIndex > startNode.y) //if terrain increases then walking is not possible so skip
-            goto CHECK_END;
-        else
+        while (true)
         {
-            List<Node> solutionNodes = new List<Node>();
-            for (int i = 0; i != byteMap.GetLength(1); i++)
+            time += timeStep;
+
+            // Update position based on parabolic equations
+            float x = startWorldX + initialVelocityX * time;
+            float y = startWorldY + initialVelocityY * time - 0.5f * gravity * time * time;
+
+            int gridX = (int)Math.Floor(x / cellSize);
+            int gridY = (int)Math.Floor(y / cellSize);
+
+            // Check if out of bounds
+            if (gridX < 0 || gridX >= byteMap.GetLength(0) || gridY < 0 || gridY >= byteMap.GetLength(1))
             {
-                List<Vector2> pointsToAdd = new List<Vector2>();
-                try
+                return (null, null); // No valid landing spot
+            }
+
+            // Check for a valid landing spot
+            if (byteMap[gridX, gridY] == 1)
+            {
+                // Ensure the cell below isn't also valid for smoother landings
+                if (gridY == 0 || byteMap[gridX, gridY - 1] == 0)
                 {
-                    float timeSquared = (2 * (nextNode.y - i)) / gravity; //calculates the time taken to fall from a point for each y value on terrain
-                    if (timeSquared < 0) //cannot root a negative
-                        break;
-
-                    float time = MathF.Sqrt(timeSquared); //calculates time and substitues into the horizontal motion formula (x = current x coord + horizontal velocity * time)
-                    float x = nextNode.x + (speed * direction * time);
-
-                    int roundedDownX = (int)(System.Math.Floor((double)x)); //calculates bounds
-                    int roundedUpX = (int)(System.Math.Ceiling((double)x));
-
-                    foreach (var point in landingPoints)
-                    {
-                        if ((int)point.y == i)
-                        {
-                            if (((int)point.x >= roundedDownX) && ((int)point.x <= roundedUpX))
-                            {
-                                pointsToAdd.Add(point); //if the solution is within the bounds add it to points to add
-                            }
-                        }
-                    }
-
-                    if (pointsToAdd.Count > 1) //this follows the exact process for finding landing nodes when jumping
-                    {
-                        if (System.Math.Abs(direction) == direction)
-                        {
-                            pointsToAdd.Sort((a, b) => a.x.CompareTo(b.x));
-                        }
-                        else
-                        {
-                            pointsToAdd.Sort((a, b) => a.x.CompareTo(b.x));
-                            pointsToAdd.Reverse();
-                        }
-                    }
-                    if (pointsToAdd.Count > 0)
-                    {
-                        Node node = nodeMap.GetGridObject((int)pointsToAdd[0].x, (int)pointsToAdd[0].y);
-                        solutionNodes.Add(node);
-                    }
-                }
-                catch
-                {
-                    break;
+                    return (gridX, gridY);
                 }
             }
 
-            solutionNodes = solutionNodes.OrderByDescending(g => g.y).ToList();
-            Node toAdd = null;
-
-            try
+            // Check for collision with terrain
+            if (byteMap[gridX, gridY] != 0 && byteMap[gridX, gridY] != 1)
             {
-                toAdd = solutionNodes[1]; //i found a bug where nodes at corners where the terrain drops can sometimes result in the node not being grounded, so finding the next intersecion after that if possible was the fix here
+                return (null, null); // Blocked by terrain
             }
-            catch
+
+            // Stop simulation if we've gone too far horizontally
+            float maxWorldJumpWidth = CalculateMaxJumpWidth();
+            if (Math.Abs(x - startWorldX) > maxWorldJumpWidth)
             {
-                try
+                return (null, null);
+            }
+        }
+    }
+    private (int? x, int? y) SimulateFall(
+    int startX,
+    int apexY,
+    float initialVelocityX)
+    {
+        float timeStep = 0.05f; // Fine granularity for simulation
+        float time = 0f;
+
+        float startWorldX = startX * cellSize;
+        float startWorldY = apexY * cellSize;
+
+        float currentX = startWorldX;
+        float currentY = startWorldY;
+
+        while (true)
+        {
+            time += timeStep;
+
+            // Update position based on parabolic equations
+            float x = currentX + initialVelocityX * time;
+            float y = currentY - 0.5f * gravity * time * time;
+
+            int gridX = (int)Math.Floor(x / cellSize);
+            int gridY = (int)Math.Floor(y / cellSize);
+
+            // Check if out of bounds
+            if (gridX < 0 || gridX >= byteMap.GetLength(0) || gridY < 0)
+            {
+                return (null, null); // No valid landing spot
+            }
+
+            // Check for a valid landing spot
+            if (gridY >= 0 && byteMap[gridX, gridY] == 1)
+            {
+                // Ensure the cell below isn't also valid for smoother landings
+                if (gridY == 0 || byteMap[gridX, gridY - 1] == 0)
                 {
-                    toAdd = solutionNodes[1]; //of course, if this is not possible add the only node in the list
+                    return (gridX, gridY);
                 }
-                catch { } //there are no soluion nodes at this point
             }
 
-            toAdd.type = NodeMovementType.WALK;
-            toAdd.tentativeGCost = toAdd.tentativeGCost = CalculateGCost(startNode, toAdd, toAdd.type);
-            neighbours.Add(toAdd);
-            neighbours.RemoveAll(n => n == null);
+            // Check for collision with terrain
+            if (byteMap[gridX, gridY] != 0 && byteMap[gridX, gridY] != 1)
+            {
+                return (null, null); // Blocked by terrain
+            }
+        }
+    }
+    /// <summary>
+    /// Finds the nearest landing spot, including above or below the given coordinates.
+    /// </summary>
+    private int FindLandingSpot(int x, int startY)
+    {
+        // Check downwards first
+        for (int y = startY; y >= 0; y--)
+        {
+            if (byteMap[x, y] == 1)
+            {
+                return y;
+            }
         }
 
-        CHECK_END:
-            return neighbours;
+        // Then check upwards
+        for (int y = startY + 1; y < byteMap.GetLength(1); y++)
+        {
+            if (byteMap[x, y] == 1)
+            {
+                return y;
+            }
+        }
+
+        return -1; // No landing spot found
     }
     private void OnApplicationQuit()
     {

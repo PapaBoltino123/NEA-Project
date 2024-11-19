@@ -74,7 +74,7 @@ namespace System.AdditionalDataStructures
         }
         public override string ToString()
         {
-            return $"{x}, {y} "; //outputs node coords for debugging
+            return $"{x}, {y}"; //output for debugging
         }
         #endregion
     }
@@ -205,7 +205,7 @@ namespace System.AdditionalDataStructures
         public bool Contains(T item)
         {
             if (IsEmpty() == true)
-                throw new Exception("The priority queue is empty.");
+                return false;
 
             List<T> values = elements.Select(x => x.item).ToList();
 

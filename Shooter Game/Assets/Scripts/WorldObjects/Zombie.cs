@@ -35,11 +35,6 @@ public class Zombie : MonoBehaviour
         {
             FindNewPath();
 
-            foreach (var node in path)
-            {
-                Debug.Log(node.x + ", " + node.y);
-            }
-
             runTest = false;
         }
     }
@@ -53,6 +48,11 @@ public class Zombie : MonoBehaviour
     public void OnPathFound(List<Node> path)
     {
         this.path = path;
+
+        foreach (Node node in path)
+        {
+            Debug.Log(node);
+        }
     }
     private bool IsGrounded()
     {

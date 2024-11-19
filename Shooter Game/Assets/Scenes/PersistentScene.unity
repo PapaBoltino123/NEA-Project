@@ -236,7 +236,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 3
   jumpForce: 5
-  zombiePrefab: {fileID: 0}
+  zombiePrefab: {fileID: 6921435582792573116, guid: 37a6503fc867b4c49bb25078f9041df8, type: 3}
 --- !u!4 &1265423578
 Transform:
   m_ObjectHideFlags: 0

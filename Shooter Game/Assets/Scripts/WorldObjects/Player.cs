@@ -47,12 +47,6 @@ public class Player : Singleton<Player>, Actor
             if (Input.GetKeyDown(KeyCode.Space))
                 isJumping = true;
         }
-
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            Node node = TerrainManager.Instance.ReturnWorldMap().GetGridObject(transform.position);
-            Debug.Log(node);
-        }
     }
     private void FixedUpdate()
     {
