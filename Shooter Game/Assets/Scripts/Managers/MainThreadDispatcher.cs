@@ -2,23 +2,28 @@ using System;
 using System.AdditionalDataStructures;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
-public class MainThreadDispatcher : Singleton<MainThreadDispatcher>
+public class ThreadManager : Singleton<ThreadManager>
 {
-    private static readonly CustomQueue<Action> executionQueue = new CustomQueue<Action>();
-    void Update()
+    public List<Thread> activeThreads;
+
+    private void Awake()
     {
-        while (executionQueue.Count > 0)
-        {
-            executionQueue.Dequeue().Invoke();
-        }
+        activeThreads = new List<Thread>();
     }
-    public void EnqueueAction(Action action)
+    private void OnApplicationQuit()
     {
-        lock (executionQueue)
+        if (activeThreads != null && activeThreads.Count > 0)
         {
-            executionQueue.Enqueue(action);
+            foreach (Thread thread in activeThreads)
+            {
+                if (thread != null && thread.IsAlive)
+                {
+                    thread.Abort();
+                }
+            }
         }
     }
 }

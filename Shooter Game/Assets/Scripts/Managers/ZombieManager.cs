@@ -19,6 +19,6 @@ public class ZombieManager : Singleton<ZombieManager>
 
     void SpawnZombie()
     {
-        GameObject zombie = Instantiate(zombiePrefab, new Vector3(Player.Instance.transform.position.x - 10, 20, 0), Quaternion.identity);
+        GameObject zombie = Instantiate(zombiePrefab, new Vector3(Player.Instance.transform.position.x - 3.2f, 20, 0), Quaternion.identity);
     }
 }
