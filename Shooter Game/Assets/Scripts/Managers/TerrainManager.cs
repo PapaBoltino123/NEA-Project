@@ -24,39 +24,40 @@ public class TerrainManager : Singleton<TerrainManager>
     [NonSerialized] public int chunkWidth = 64; //the width a chunk 
     [NonSerialized] public int chunkHeight = 128; //the height of a chunk
     [NonSerialized] public int rockCount = 0; //the number pointing to what rock tile should be painted
-    [NonSerialized] public int treeCount = 0;
-    [NonSerialized] public int worldWidth = 8192;
-    [NonSerialized] public int worldHeight = 128;
-    [NonSerialized] public int[] surfaceHeights;
+    [NonSerialized] public int treeCount = 0; //the number pointing to what tree tile should be painted
+    [NonSerialized] public int worldWidth = 8192; //the width of the map
+    [NonSerialized] public int worldHeight = 128; //the height of the map
+    [NonSerialized] public int[] surfaceHeights; //the list of surface heights generated
 
-    private PerlinNoise perlinNoise;
-    private Grid<Node> map;
-    public float cellSize = 0.16f;
+    private PerlinNoise perlinNoise; //the class used to determine perlin height values
+    private Grid<Node> map; //the map of nodes 
+    public float cellSize = 0.16f; //the size of each cell in the map
     #endregion
     #region Methods
     private void Start()
     {
-        GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame);
+        GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame); //subscribes the terrain manager to the saving and loading events
         GameManager.Instance.fileManager.dataBroadcast.SendNewData += new EventHandler<DataEventArgs>(NewGame);
         GameManager.Instance.fileManager.dataBroadcast.SaveData += new EventHandler<EventArgs>(SaveGame);
     }
     private static int SetSeed()
     {
-        System.Random rng = new System.Random();
+        System.Random rng = new System.Random(); //selects a random seed between -10000 and 10000
         int seed = rng.Next(-10000, 10000);
         return seed;
     }
     public void Initialize()
     {
-        if (seed > 10000)
+        if (seed > 10000) //if there is no saved seed select a random one
             seed = SetSeed();
 
-        map = new Grid<Node>(worldWidth, worldHeight, cellSize, (Grid<Node> g, int x, int y) => new Node(g, x, y));
-        perlinNoise = new PerlinNoise(seed);
-        surfaceHeights = new int[worldWidth];
-        LoadMapData(0, 0, worldWidth, worldHeight, TileType.SKY);
-        GenerateWorld();
-        StartCoroutine(StartChunkManager(0.5f));
+        map = new Grid<Node>(worldWidth, worldHeight, cellSize, (Grid<Node> g, int x, int y) => new Node(g, x, y)); //creates a new map with width worldwidth, height worldheight and cellsize of 0.16f
+                                                                                                                    //and populates the map with new nodes
+        perlinNoise = new PerlinNoise(seed); //creates a new instance of the perlin noise class passing in seed as a variable so the same map can be generated again
+        surfaceHeights = new int[worldWidth]; //initializes surface heights
+        LoadMapData(0, 0, worldWidth, worldHeight, TileType.SKY); //sets all the nodes tiledata values initially to sky
+        GenerateWorld(); //generates the rest of the maps tile data
+        StartCoroutine(StartChunkManager(0.5f)); //starts the chunk manager coroutine
     }
     private void LoadGame(object sender , DataEventArgs e)
     {

@@ -140,12 +140,13 @@ public class Zombie : MonoBehaviour
                     yield return null;
             }
             else
+            {
                 break;
+            }
         }
     }
-
-    void AlignPosition(Node node)
+    private void Attack()
     {
-        transform.position = new Vector3(nodeMap.GetWorldPosition(node.x, node.y).x, transform.position.y, 0);
+        Debug.Log("Attacking player");
     }
 }

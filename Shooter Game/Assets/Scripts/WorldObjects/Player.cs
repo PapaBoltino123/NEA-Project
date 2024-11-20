@@ -139,6 +139,7 @@ public class Player : Singleton<Player>, Actor
         InGameMenuManager.Instance.gameUI.First().GetComponent<Text>().text = $"Score: {score}";
         InGameMenuManager.Instance.gameUI[1].GetComponent<Slider>().value = health;
         InGameMenuManager.Instance.gameUI.Last().GetComponent<Text>().text = Convert.ToString(health);
+        InGameMenuManager.Instance.healthFillArea.GetComponent<Image>().color = InGameMenuManager.Instance.SetBarColor(health);
         GameManager.Instance.activeActors.Add(gameObject);
     }
 }

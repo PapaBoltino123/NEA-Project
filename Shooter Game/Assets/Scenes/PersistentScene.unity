@@ -268,7 +268,7 @@ GameObject:
   - component: {fileID: 1584742707}
   m_Layer: 6
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -451,9 +451,9 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
-  weaponController: {fileID: 1865992677}
-  test: {fileID: 0}
-  tile: {fileID: 0}
+  score: 0
+  health: 50
+  isPaused: 0
   playerState: 0
 --- !u!1 &1651998653
 GameObject:
@@ -648,7 +648,10 @@ MonoBehaviour:
   savedData:
     playerX: -10
     playerY: -10
+    score: 0
+    playerHealth: 50
     seed: 100000
+    smoothness: 50
   debugging: 0
 --- !u!4 &2055800948
 Transform:
