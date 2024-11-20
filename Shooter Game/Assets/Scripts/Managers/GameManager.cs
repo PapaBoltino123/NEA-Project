@@ -86,22 +86,32 @@ public class GameManager : Singleton<GameManager>
             loadProgress = Mathf.Clamp01(elapsedTime / (totalTime + 7f));
         }
 
+        InGameMenuManager.Instance.SetUIActivityFalse();
         player.SetActive(true);
-        
+
         if (isNewGame == true)
             fileManager.NewGame();
         else
             fileManager.LoadGame();
+
         yield return new WaitForSeconds(5f);
         ZombieManager.Instance.byteMap = TerrainManager.Instance.ReturnMapAsByteGrid();
         ZombieManager.Instance.nodeMap = TerrainManager.Instance.ReturnWorldMap();
+
         yield return new WaitForSeconds(1f);
+        Player.Instance.rb.constraints = RigidbodyConstraints2D.None;
+        Player.Instance.rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+
         loadingScreen.SetActive(false);
-        InGameMenuManager.Instance.pauseButton.SetActive(true);
+        InGameMenuManager.Instance.SwitchUIActivity();
+        Player.Instance.isPaused = false;
+        Player.Instance.BeginUpdatingScore();
         scenesLoading.Clear();
     }
     public void LoadMainMenu()
     {
+        InGameMenuManager.Instance.SwitchUIActivity();
+        Player.Instance.EndUpdatingScore();
         loadingScreen.SetActive(true);
         scenesLoading.Add(SceneManager.UnloadSceneAsync((int)SceneType.MAINGAME));
         scenesLoading.Add(SceneManager.LoadSceneAsync((int)SceneType.TITLESCREEN, LoadSceneMode.Additive));

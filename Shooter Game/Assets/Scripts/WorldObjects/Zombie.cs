@@ -51,10 +51,7 @@ public class Zombie : MonoBehaviour
     {
         this.path = path;
 
-        foreach (var node in path)
-            Debug.Log(node);
-
-        //StartCoroutine(FollowPath());
+        StartCoroutine(FollowPath());
     }
     public void Jump(int direction, float jumpForce, Rigidbody2D rb)
     {
@@ -116,7 +113,6 @@ public class Zombie : MonoBehaviour
         for (int i = 0; i < path.Count; i++)
         {
             Node currentNode = path[i];
-            AlignPosition(currentNode);
 
             if (i + 1 < path.Count)
             {

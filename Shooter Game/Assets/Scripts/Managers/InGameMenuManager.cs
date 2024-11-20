@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class InGameMenuManager : Singleton<InGameMenuManager>
 {
     #region Variable Declaration
-    [SerializeField] public GameObject pauseButton;
+    [SerializeField] public GameObject[] gameUI;
     [SerializeField] GameObject pauseScreen;
     [SerializeField] Slider audioSlider, fovSlider;
     [SerializeField] GameObject[] menuUI;
@@ -15,8 +15,8 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     #region Methods
     private void Awake()
     {
+        SetUIActivityFalse();
         pauseScreen.SetActive(false);
-        pauseButton.SetActive(false);
         audioSlider.value = GameManager.Instance.volume;
         fovSlider.value = GameManager.Instance.zoom;
         audioSlider.onValueChanged.AddListener(OnAudioSliderChanged);
@@ -30,10 +30,12 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
             rb.constraints = RigidbodyConstraints2D.FreezeAll;
         }
 
+        Player.Instance.isPaused = true;
         pauseScreen.SetActive(true);
     }
     public void ClosePauseMenu()
     {
+        Player.Instance.isPaused = true;
         pauseScreen.SetActive(false);
         foreach (var actor in GameManager.Instance.activeActors)
         {
@@ -44,7 +46,6 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     public void SaveAndExit()
     {
         StopAllCoroutines();
-        pauseButton.SetActive(false);
 
         foreach (var chunk in ChunkManager.Instance.chunkPool.ToList())
         {
@@ -87,6 +88,20 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
         for (int i = 3; i < menuUI.Length; i++)
         {
             menuUI[i].SetActive(false);
+        }
+    }
+    public void SwitchUIActivity()
+    {
+        foreach (var uiElement in gameUI)
+        {
+            uiElement.SetActive(!uiElement.activeSelf);
+        }
+    }
+    public void SetUIActivityFalse()
+    {
+        foreach (var uiElement in gameUI)
+        {
+            uiElement.SetActive(false);
         }
     }
     #endregion

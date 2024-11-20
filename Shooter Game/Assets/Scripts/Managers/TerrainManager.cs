@@ -62,16 +62,19 @@ public class TerrainManager : Singleton<TerrainManager>
     {
         GameData data = e.gameData;
         seed = data.seed;
+        smoothness = data.smoothness;
         Initialize();
     }
     private void SaveGame(object sender, EventArgs e)
     {
         GameManager.Instance.savedData.seed = seed;
+        GameManager.Instance.savedData.smoothness = smoothness;
     }
     private void NewGame(object sender, DataEventArgs e)
     {
         GameData data = e.gameData;
         seed = data.seed;
+        smoothness = data.smoothness;
         Initialize();
     }
     private void GenerateWorld()

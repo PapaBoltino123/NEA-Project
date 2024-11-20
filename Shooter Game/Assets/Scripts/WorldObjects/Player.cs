@@ -1,21 +1,22 @@
 using System;
 using System.AdditionalDataStructures;
+using System.AddtionalEventStructures;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 
 public class Player : Singleton<Player>, Actor
 {
     public float jumpForce, speed;
     public LayerMask groundLayer;
-    [SerializeField] Animator weaponController;
 
-    [SerializeField] Tilemap test;
-    [SerializeField] TileBase tile;
+    public int score = 0;
+    public int health = 50;
+    public bool isPaused = false;
 
     [NonSerialized] public Rigidbody2D rb = new Rigidbody2D();
     private BoxCollider2D boxCollider;
@@ -29,11 +30,15 @@ public class Player : Singleton<Player>, Actor
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         boxCollider = GetComponent<BoxCollider2D>();
+
+        GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame);
+        GameManager.Instance.fileManager.dataBroadcast.SendNewData += new EventHandler<DataEventArgs>(NewGame);
+        GameManager.Instance.fileManager.dataBroadcast.SaveData += new EventHandler<EventArgs>(SaveGame);
     }
     private void Update()
     {
-        weaponController.SetBool("display axe", true);
         float input = Input.GetAxisRaw("Horizontal");
+
         if (input > 0)
             moveInput = input;
         else if (input < 0)
@@ -47,6 +52,10 @@ public class Player : Singleton<Player>, Actor
             if (Input.GetKeyDown(KeyCode.Space))
                 isJumping = true;
         }
+
+        InGameMenuManager.Instance.gameUI.First().GetComponent<Text>().text = $"Score: {score}";
+        InGameMenuManager.Instance.gameUI[1].GetComponent<Slider>().value = health;
+        InGameMenuManager.Instance.gameUI.Last().GetComponent<Text>().text = Convert.ToString(health);
     }
     private void FixedUpdate()
     {
@@ -86,5 +95,50 @@ public class Player : Singleton<Player>, Actor
             return true;
         else
             return false;
+    }
+    private void LoadGame(object sender, DataEventArgs e)
+    {
+        GameData data = e.gameData;
+        score = data.score;
+        health = data.playerHealth;
+        Initialize();
+    }
+    private void SaveGame(object sender, EventArgs e)
+    {
+        GameManager.Instance.savedData.playerHealth = health;
+        GameManager.Instance.savedData.score = score;
+    }
+    private void NewGame(object sender, DataEventArgs e)
+    {
+        GameData data = e.gameData;
+        score = data.score;
+        health = data.playerHealth;
+        Initialize();
+    }
+    public void BeginUpdatingScore()
+    {
+        StartCoroutine(UpdateScore());
+    }
+    public void EndUpdatingScore()
+    {
+        StopCoroutine(UpdateScore());
+    }
+    private IEnumerator UpdateScore()
+    {
+        while (true)
+        {
+            if (!isPaused)
+            {
+                score += 10;
+            }
+            yield return new WaitForSeconds(1f);
+        }
+    }
+    private void Initialize()
+    {
+        InGameMenuManager.Instance.gameUI.First().GetComponent<Text>().text = $"Score: {score}";
+        InGameMenuManager.Instance.gameUI[1].GetComponent<Slider>().value = health;
+        InGameMenuManager.Instance.gameUI.Last().GetComponent<Text>().text = Convert.ToString(health);
+        GameManager.Instance.activeActors.Add(gameObject);
     }
 }
