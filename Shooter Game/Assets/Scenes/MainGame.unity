@@ -739,7 +739,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &169531648
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1651,7 +1651,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &385900049
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5685,9 +5685,16 @@ MonoBehaviour:
   - {fileID: 2031452892}
   - {fileID: 966998514}
   - {fileID: 1460601610}
+  slotState:
+  - {fileID: 21300000, guid: 8a854f476e9c68f429786c888729ff6a, type: 3}
+  - {fileID: 21300000, guid: 8d0c6af14e5165f4396d6e91c7f40b36, type: 3}
   pauseScreen: {fileID: 1377424796}
   inventoryScreen: {fileID: 361424055}
   healthFillArea: {fileID: 918839387}
+  hotBarSlots:
+  - {fileID: 1258402095}
+  - {fileID: 932032981}
+  - {fileID: 900254801}
   audioSlider: {fileID: 441858023}
   fovSlider: {fileID: 649805394}
   menuUI:

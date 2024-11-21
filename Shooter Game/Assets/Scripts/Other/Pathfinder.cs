@@ -134,7 +134,7 @@ public class Pathfinder
             if (found == false)
                 mainThreadContext.Post(addToMainThread => pathFoundCallback(new List<Node>()), null);
         });
-        ThreadManager.Instance.activeThreads.Add(pathfindingThread);
+        GameManager.Instance.activeThreads.Add(pathfindingThread);
         pathfindingThread.Start();
     }
     public float CalculateMaxJumpWidth()

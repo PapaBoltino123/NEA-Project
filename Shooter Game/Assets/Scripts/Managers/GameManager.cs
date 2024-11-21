@@ -4,11 +4,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.AdditionalDataStructures;
 using System.AddtionalEventStructures;
+using System.Threading;
 
 public class GameManager : Singleton<GameManager>
 {
     [SerializeField] GameObject player;
     public List<GameObject> activeActors;
+    public List<Thread> activeThreads;
 
     public int volume = 50;
     public float zoom = 1.5f;
@@ -26,6 +28,7 @@ public class GameManager : Singleton<GameManager>
 
     private void Awake()
     {
+        activeThreads = new List<Thread>();
         eventBroadcaster = new EventBroadcaster();
         fileManager = new FileManager(eventBroadcaster);
         Player.Instance.Initialize();
@@ -88,6 +91,8 @@ public class GameManager : Singleton<GameManager>
         }
 
         InGameMenuManager.Instance.SetUIActivityFalse();
+        InventoryManager.Instance.hotBarSlots = InGameMenuManager.Instance.hotBarSlots;
+        InventoryManager.Instance.activeSlotIndex = (int)HotBarType.RANGED;
         player.SetActive(true);
 
         if (isNewGame == true)
@@ -112,11 +117,22 @@ public class GameManager : Singleton<GameManager>
     public void LoadMainMenu()
     {
         InGameMenuManager.Instance.SwitchUIActivity();
+        InventoryManager.Instance.hotBarSlots = null;
         Player.Instance.EndUpdatingScore();
         loadingScreen.SetActive(true);
         scenesLoading.Add(SceneManager.UnloadSceneAsync((int)SceneType.MAINGAME));
         scenesLoading.Add(SceneManager.LoadSceneAsync((int)SceneType.TITLESCREEN, LoadSceneMode.Additive));
 
         StartCoroutine(GetMenuSceneLoadProgress());
+    }
+    private void OnApplicationQuit()
+    {
+        foreach (var thread in activeThreads)
+        {
+            if (thread != null && thread.IsAlive)
+            {
+                thread.Abort();
+            }
+        }
     }
 }

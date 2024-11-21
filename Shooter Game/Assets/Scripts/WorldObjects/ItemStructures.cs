@@ -63,7 +63,7 @@ namespace System.ItemStructures
                     break;
                 case "medkit":
                     healthBoost = 100;
-                    effectLength = 7f;
+                    effectLength = 5f;
                     break;
             }
         }
@@ -135,32 +135,32 @@ namespace System.ItemStructures
 
         public void AssignVariables(string name)
         {
-            type = typeof(HealthPack);
+            type = typeof(RangedWeapon);
 
             switch (name)
             {
-                case "pistol":
+                case "Pistol":
                     damage = 5;
                     knockback = 1f;
                     cooldown = 0.6f;
                     reloadSpeed = 3f;
                     magSize = 15;
                     break;
-                case "rifle":
+                case "Rifle":
                     damage = 10;
                     knockback = 1f;
                     cooldown = 0.9f;
                     reloadSpeed = 4f;
                     magSize = 20;
                     break;
-                case "machineGun":
+                case "SMG":
                     damage = 3;
                     knockback = 0.5f;
                     cooldown = 0.2f;
                     reloadSpeed = 5f;
                     magSize = 100;
                     break;
-                case "rPG":
+                case "RocketLauncher":
                     damage = 50;
                     knockback = 3;
                     cooldown = 3;

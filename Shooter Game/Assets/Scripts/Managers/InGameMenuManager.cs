@@ -8,7 +8,9 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
 {
     #region Variable Declaration
     [SerializeField] public GameObject[] gameUI;
+    [SerializeField] private Sprite[] slotState;
     public GameObject pauseScreen, inventoryScreen, healthFillArea;
+    public GameObject[] hotBarSlots;
     [SerializeField] Slider audioSlider, fovSlider;
     private Slider healthBar;
     [SerializeField] GameObject[] menuUI;
@@ -38,6 +40,17 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
                 case false:
                     LoadPauseMenu();
                     break;        
+            }
+        }
+
+        if (Player.Instance.isPaused == false)
+        {
+            foreach (var slot in hotBarSlots)
+            {
+                if (slot == InventoryManager.Instance.activeSlot)
+                    slot.GetComponent<Image>().sprite = slotState[1];
+                else
+                    slot.GetComponent<Image>().sprite = slotState[0];
             }
         }
     }

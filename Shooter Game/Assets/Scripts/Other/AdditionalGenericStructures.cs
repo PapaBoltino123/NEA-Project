@@ -293,4 +293,17 @@ namespace System.AdditionalDataStructures
         WALK,
         JUMP
     }
+    public enum HotBarType
+    {
+        RANGED = 0,
+        MELEE = 1,
+        HEALTH = 2
+    }
+    public enum AmmoTypes
+    {
+        PISTOL = 0,
+        RIFLE = 1,
+        SMG = 2,
+        ROCKET = 3
+    }
 }

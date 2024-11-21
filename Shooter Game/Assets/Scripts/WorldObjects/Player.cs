@@ -3,6 +3,7 @@ using System.AdditionalDataStructures;
 using System.AddtionalEventStructures;
 using System.Collections;
 using System.Collections.Generic;
+using System.ItemStructures;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -18,9 +19,19 @@ public class Player : Singleton<Player>, Actor
     public int health;
     public bool isPaused = false;
 
+    [SerializeField] GameObject[] bulletPrefabs;
+    private Transform firePoint;
+    private Ammo bullet;
+
+    private GameObject activeRangedWeapon;
+    private GameObject activeMeleeWeapon;
+    private GameObject activeHealthItem;
+    private GameObject activeItem;
+
     [NonSerialized] public Rigidbody2D rb = new Rigidbody2D();
     private BoxCollider2D boxCollider;
     Animator anim = new Animator();
+
     bool isJumping;
     private float moveInput = 0;
     public PlayerState playerState = PlayerState.ALIVE;
@@ -41,6 +52,39 @@ public class Player : Singleton<Player>, Actor
         {
             float input = Input.GetAxisRaw("Horizontal");
 
+            try
+            {
+                activeRangedWeapon = GetActiveItemInSlot(InGameMenuManager.Instance.hotBarSlots[(int)HotBarType.RANGED]);
+                activeMeleeWeapon = GetActiveItemInSlot(InGameMenuManager.Instance.hotBarSlots[(int)HotBarType.MELEE]);
+                activeHealthItem = GetActiveItemInSlot(InGameMenuManager.Instance.hotBarSlots[(int)HotBarType.HEALTH]);
+
+                GameObject activeItemInHotBar = InventoryManager.Instance.activeSlotIndex switch
+                {
+                    (int)HotBarType.RANGED => activeRangedWeapon,
+                    (int)HotBarType.MELEE => activeMeleeWeapon,
+                    (int)HotBarType.HEALTH => activeHealthItem
+                };
+
+                activeItem = transform.Cast<Transform>()
+                    .Select(child => child.gameObject)
+                    .ToList()
+                    .FirstOrDefault(child => child.name == activeItemInHotBar.name);
+
+                foreach (var item in transform.Cast<Transform>().Select(c => c.gameObject).ToList())
+                {
+                    item.gameObject.SetActive(false);
+                }
+
+                activeItem.SetActive(true);
+
+                if (activeItemInHotBar == activeRangedWeapon)
+                {
+                    firePoint = activeItem.transform.GetChild(0);
+                    RotateGunTowardsMouse();
+                }
+            }
+            catch { }
+
             if (input > 0)
                 moveInput = input;
             else if (input < 0)
@@ -53,6 +97,28 @@ public class Player : Singleton<Player>, Actor
 
                 if (Input.GetKeyDown(KeyCode.Space))
                     isJumping = true;
+            }
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                try
+                {
+                    RangedWeapon weapon = activeItem.GetComponent<ItemType>().item as RangedWeapon;
+                    Shoot(weapon);
+                }
+                catch
+                {
+                    try
+                    {
+                        MeleeWeapon weapon = activeItem.GetComponent<ItemType>().item as MeleeWeapon;
+                        //Attack(weapon)
+                    }
+                    catch
+                    {
+                        HealthPack pack = activeItem.GetComponent<ItemType>().item as HealthPack;
+                        StartHealing(pack);
+                    }
+                }
             }
         }
         else
@@ -91,7 +157,7 @@ public class Player : Singleton<Player>, Actor
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
     }
-    private bool IsGrounded()
+    public bool IsGrounded()
     {
         Bounds bounds = boxCollider.bounds;
         Vector2 boxSize = new Vector2(bounds.size.x, 0.1f);
@@ -103,6 +169,27 @@ public class Player : Singleton<Player>, Actor
             return true;
         else
             return false;
+    }
+    private void RotateGunTowardsMouse()
+    {
+        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 gunDirection = mousePosition - transform.position;
+        float angle = Mathf.Atan2(gunDirection.y, gunDirection.x) * Mathf.Rad2Deg;
+
+        Quaternion targetRotation = Quaternion.Euler(new Vector3(0, 0, angle));
+        activeItem.transform.rotation = Quaternion.Slerp(activeRangedWeapon.transform.rotation, targetRotation, 5f);
+
+        float scaleY = activeItem.transform.rotation.z switch
+        {
+            >90 and < 180 => -1,
+            <-90 and > -180 => -1,
+            _ => 1
+        };
+
+        if (transform.localScale.x > 0)
+            activeItem.transform.localScale = new Vector3(-transform.localScale.x, scaleY, 1);
+        else
+            activeItem.transform.localScale = new Vector3(-transform.localScale.x, -scaleY, 1);
     }
     private void LoadGame(object sender, DataEventArgs e)
     {
@@ -158,5 +245,54 @@ public class Player : Singleton<Player>, Actor
         GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame);
         GameManager.Instance.fileManager.dataBroadcast.SendNewData += new EventHandler<DataEventArgs>(NewGame);
         GameManager.Instance.fileManager.dataBroadcast.SaveData += new EventHandler<EventArgs>(SaveGame);
+    }
+    private void Shoot(RangedWeapon weapon)
+    {
+        GameObject bulletObject = Instantiate(bulletPrefabs[0], firePoint.position, activeRangedWeapon.transform.rotation * Quaternion.Euler(0, 0, 90));
+        Bullet bullet = bulletObject.GetComponent<Bullet>();
+        bullet.Direction = GetBulletDirection();
+    }
+    private Vector3 GetBulletDirection()
+    {
+        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 gunDirection = mousePosition - transform.position; 
+        return gunDirection;
+    }
+    private GameObject GetActiveItemInSlot(GameObject parent)
+    {
+        GameObject activeItem = parent.transform.Cast<Transform>()
+            .Select(child => child.gameObject)
+            .OrderByDescending(child => child.activeSelf)
+            .ToList()
+            .First();
+
+        return activeItem;
+    }
+    private void StartHealing(HealthPack pack)
+    {
+        int healthBoost = pack.healthBoost;
+        float effectLength = pack.effectLength;
+        StartCoroutine(Heal(healthBoost, effectLength));
+    }
+    private IEnumerator Heal(int healthBoost, float effectLength)
+    {
+        Color normalColour = GetComponent<SpriteRenderer>().color;
+        Color healingColour = new Color(21f / 255f, 202f / 255f, 0, 120f / 255f);
+        float elapsedTime = 0f;
+        int currentHealth = health;
+        float timeStep = 0.5f;
+        int healthPerTimeStep = (int)(healthBoost / effectLength);
+
+        while (health < 100 && elapsedTime < effectLength)
+        {
+            gameObject.GetComponent<SpriteRenderer>().color = healingColour;
+            currentHealth += healthPerTimeStep;
+            currentHealth = System.Math.Min(currentHealth, 100);
+            health = currentHealth;
+
+            yield return new WaitForSeconds(timeStep);
+            elapsedTime += timeStep;
+        }
+        gameObject.GetComponent<SpriteRenderer>().color = normalColour;
     }
 }
