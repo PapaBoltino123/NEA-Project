@@ -26,10 +26,11 @@ public class GameManager : Singleton<GameManager>
 
     private void Awake()
     {
-        player.SetActive(false);
         eventBroadcaster = new EventBroadcaster();
         fileManager = new FileManager(eventBroadcaster);
+        Player.Instance.Initialize();
         activeActors = new List<GameObject>();
+        player.SetActive(false);
         loadingScreen.SetActive(false);
         SceneManager.LoadSceneAsync((int)SceneType.TITLESCREEN, LoadSceneMode.Additive);
     }

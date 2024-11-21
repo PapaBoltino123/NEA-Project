@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.AdditionalDataStructures;
@@ -12,6 +12,7 @@ using System;
 using UnityEngine.UIElements;
 using UnityEngine.WSA;
 using System.ComponentModel.Design;
+using System.IO;
 
 public class Pathfinder
 {
@@ -79,7 +80,7 @@ public class Pathfinder
             }
 
             startNode.gCost = 0; //initial distance travelled is 0
-            startNode.hCost = CalculateHeurisicCost(startNode, endNode); //calculates heuristic cost to goal using euclidean distance and weights
+            startNode.hCost = CalculateHeuristicCost(startNode, endNode); //calculates heuristic cost to goal using euclidean distance and weights
             startNode.CalculateFCost(); //calculates final cost
             open.Enqueue(startNode, startNode.fCost);
 
@@ -92,10 +93,11 @@ public class Pathfinder
 
                 closed.Add(currentNode); //adds node to closed list
 
-               neighbours = FindNeighbours(currentNode);
+                neighbours = FindNeighbours(currentNode);
 
                 foreach (var node in neighbours)
                 {
+                    Debug.Log(node);
                     if (closed.Contains(node))
                         continue;
 
@@ -105,9 +107,7 @@ public class Pathfinder
                     {
                         node.parentNode = currentNode;
                         node.gCost = tentativeGCost;
-                        node.hCost = CalculateHeurisicCost(node, endNode);
-                        node.CalculateFCost();
-                        node.UpdateNode();
+                        node.hCost = CalculateHeuristicCost(node, endNode);
                     }
 
                     if (!open.Contains(node))
@@ -131,6 +131,8 @@ public class Pathfinder
                     mainThreadContext.Post(addToMainThread => pathFoundCallback(path), null);
                 }
             }
+            if (found == false)
+                mainThreadContext.Post(addToMainThread => pathFoundCallback(new List<Node>()), null);
         });
         ThreadManager.Instance.activeThreads.Add(pathfindingThread);
         pathfindingThread.Start();
@@ -149,23 +151,36 @@ public class Pathfinder
     {
         return (int)System.Math.Floor(n / cellSize); //the conversion to grid units which is what the algorithm uses to find path
     }
-    private float CalculateHeurisicCost(Node start, Node end)
+    public float CalculateHeuristicCost(Node start, Node end)
     {
-        int walkingWeight = 1;
-        int jumpingWeight = 2;
-
-        int costSquared = (walkingWeight * (int)System.Math.Pow(end.x - start.x, 2)) + (jumpingWeight * (int)System.Math.Pow(end.y - start.y, 2));
-        return (float)System.Math.Sqrt(costSquared);
+        float distance = MathF.Sqrt(MathF.Pow(start.x - end.x, 2) + MathF.Pow(start.y - end.y, 2));
+        return distance * 0.9f; // Ensure weight ≤ 1 for admissibility
     }
-    private float CalculateGCost(Node start, Node end, NodeMovementType type)
+    public float CalculateCost(Node start, Node end, NodeMovementType movementType)
     {
+        float baseCost;
+
+        // Calculate Euclidean distance between nodes
         float distance = MathF.Sqrt(MathF.Pow(end.x - start.x, 2) + MathF.Pow(end.y - start.y, 2));
-        int penalty = 1;
 
-        if (type == NodeMovementType.JUMP)
-            penalty = 2;
+        // Assign base costs based on movement type
+        switch (movementType)
+        {
+            case NodeMovementType.WALK:
+                baseCost = distance; // Walking is direct, no extra penalty
+                break;
 
-        return distance * penalty;
+            case NodeMovementType.JUMP:
+                // Add extra penalty for jumping
+                baseCost = distance * 1.5f; // Adjust multiplier as necessary for game balance
+                break;
+
+            default:
+                throw new ArgumentException("Unsupported movement type");
+        }
+
+        // Total cost
+        return baseCost;
     }
     private List<Node> FindNeighbours(Node currentNode)
     {
@@ -200,11 +215,11 @@ public class Pathfinder
                 // Add horizontal neighbor
                 neighbours.Add(nodeMap.GetGridObject(targetX, targetY));
                 neighbours.Last().type = NodeMovementType.WALK;
-                neighbours.Last().tentativeGCost = CalculateGCost(currentNode, neighbours.Last(), NodeMovementType.WALK);
+                neighbours.Last().tentativeGCost = CalculateCost(currentNode, neighbours.Last(), NodeMovementType.WALK);
             }
             else if (byteMap[targetX, targetY] == 0 && groundIndex < targetY)
             {
-                // Simulate fall if there�s a void below the walked-to position
+                // Simulate fall if there’s a void below the walked-to position
                 if (targetY > 0 && byteMap[targetX, targetY - 1] == 0)
                 {
                     (int? fallX, int? fallY) = SimulateFall(targetX, targetY, 0);
@@ -213,7 +228,7 @@ public class Pathfinder
                     {
                         neighbours.Add(nodeMap.GetGridObject(fallX.Value, fallY.Value));
                         neighbours.Last().type = NodeMovementType.WALK;
-                        neighbours.Last().tentativeGCost = CalculateGCost(currentNode, neighbours.Last(), NodeMovementType.WALK);
+                        neighbours.Last().tentativeGCost = CalculateCost(currentNode, neighbours.Last(), NodeMovementType.WALK);
                     }
                 }
             }
@@ -234,7 +249,7 @@ public class Pathfinder
                 // Add valid jump landing as a neighbor
                 neighbours.Add(nodeMap.GetGridObject(landingX.Value, landingY.Value));
                 neighbours.Last().type = NodeMovementType.JUMP;
-                neighbours.Last().tentativeGCost = CalculateGCost(currentNode, neighbours.Last(), NodeMovementType.JUMP);
+                neighbours.Last().tentativeGCost = CalculateCost(currentNode, neighbours.Last(), NodeMovementType.JUMP);
             }
         }
 

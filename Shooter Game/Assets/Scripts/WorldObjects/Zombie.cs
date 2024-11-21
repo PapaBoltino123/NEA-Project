@@ -50,6 +50,7 @@ public class Zombie : MonoBehaviour
     public void OnPathFound(List<Node> path)
     {
         this.path = path;
+        Debug.Log(path.Count);
 
         StartCoroutine(FollowPath());
     }

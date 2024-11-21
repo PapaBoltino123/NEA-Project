@@ -43,12 +43,6 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     }
     public void LoadPauseMenu()
     {
-        foreach (var actor in GameManager.Instance.activeActors) //when the pause menu is loaded freeze all actors so that neither can die while paused
-        {
-            Rigidbody2D rb = actor.GetComponent<Rigidbody2D>();
-            rb.constraints = RigidbodyConstraints2D.FreezeAll;
-        }
-
         Player.Instance.isPaused = true; //the player is paused
         pauseScreen.SetActive(true); //activate the pause screen
     }
@@ -56,12 +50,6 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     {
         Player.Instance.isPaused = false; //the player is unpaused
         pauseScreen.SetActive(false); //hide the pause screen
-
-        foreach (var actor in GameManager.Instance.activeActors) //unfreeze the actors
-        {
-            Rigidbody2D rb = actor.GetComponent<Rigidbody2D>();
-            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-        }
     }
     public void SaveAndExit() //when the player presses to save and exit
     {
@@ -77,7 +65,6 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
         }
 
         GameManager.Instance.fileManager.SaveGame(); //save the game data
-        GameManager.Instance.activeActors.Clear(); //clear the active actors list
         GameManager.Instance.LoadMainMenu(); //load the main menu scene
     }
     private void OnAudioSliderChanged(float value)
