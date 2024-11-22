@@ -21,7 +21,11 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
             {
                 if (instance == null)
                 {
-                    instance = (T)FindObjectOfType(typeof(T));
+                    try
+                    {
+                        instance = (T)FindObjectOfType(typeof(T));
+                    }
+                    catch { }
 
                     if (instance == null)
                     {

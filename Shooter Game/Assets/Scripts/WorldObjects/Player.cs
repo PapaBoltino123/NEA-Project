@@ -1,4 +1,5 @@
 using System;
+using System.Dynamic;
 using System.AdditionalDataStructures;
 using System.AddtionalEventStructures;
 using System.Collections;
@@ -101,21 +102,27 @@ public class Player : Singleton<Player>, Actor
 
             if (Input.GetMouseButtonDown(0))
             {
+                (HealthPack pack, MeleeWeapon melee, RangedWeapon ranged) tupleVariable = activeItem.GetComponent<ItemType>().ItemVariable;
+                object item = GetFirstNonNullValue(tupleVariable);
+
                 try
                 {
-                    RangedWeapon weapon = activeItem.GetComponent<ItemType>().item as RangedWeapon;
+                    RangedWeapon weapon = item as RangedWeapon;
+                    weapon.AssignVariables(activeItem.name);
                     Shoot(weapon);
                 }
                 catch
                 {
                     try
                     {
-                        MeleeWeapon weapon = activeItem.GetComponent<ItemType>().item as MeleeWeapon;
+                        MeleeWeapon weapon = item as MeleeWeapon;
+                        weapon.AssignVariables(activeItem.name);
                         //Attack(weapon)
                     }
                     catch
                     {
-                        HealthPack pack = activeItem.GetComponent<ItemType>().item as HealthPack;
+                        HealthPack pack = item as HealthPack;
+                        pack.AssignVariables(activeItem.name);
                         StartHealing(pack);
                     }
                 }
@@ -294,5 +301,11 @@ public class Player : Singleton<Player>, Actor
             elapsedTime += timeStep;
         }
         gameObject.GetComponent<SpriteRenderer>().color = normalColour;
+    }
+    public static object GetFirstNonNullValue((object, object, object) tuple)
+    {
+        // Use LINQ to filter out null values and then find the first non-null value
+        return new[] { tuple.Item1, tuple.Item2, tuple.Item3 }
+                .FirstOrDefault(item => item != null);  // Find the first non-null value
     }
 }

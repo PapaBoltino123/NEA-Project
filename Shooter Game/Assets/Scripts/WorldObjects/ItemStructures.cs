@@ -16,18 +16,11 @@ namespace System.ItemStructures
     {
         public Type type { get; set; }
         public int count { get; set; }
-        public string name
-        {
-            get { return name; }
-            set
-            {
-                name = value;
-                AssignVariables(name);
-            }
-        }
+        public string name { get; set; }
 
         public void AssignVariables(string name)
         {
+            this.name = name;
             type = typeof(Ammo);
         }
     }
@@ -35,20 +28,13 @@ namespace System.ItemStructures
     {
         public Type type { get; set; }
         public int count { get; set; }
-        public string name
-        {
-            get { return name; }
-            set
-            {
-                name = value;
-                AssignVariables(name);
-            }
-        }
+        public string name { get; set; }
         public int healthBoost = 0;
         public float effectLength = 0f;
 
         public void AssignVariables(string name)
         {
+            this.name = name;
             type = typeof(HealthPack);
 
             switch(name)
@@ -72,21 +58,14 @@ namespace System.ItemStructures
     {
         public Type type { get; set; }
         public int count { get; set; }
-        public string name
-        {
-            get { return name; }
-            set
-            {
-                name = value;
-                AssignVariables(name);
-            }
-        }
+        public string name { get; set; }
         public int damage = 0;
         public float knockback = 0f;
         public int durability = 0;
         public float attackSpeed = 0f;
         public void AssignVariables(string name)
         {
+            this.name = name;
             type = typeof(MeleeWeapon);
 
             switch (name)
@@ -123,18 +102,11 @@ namespace System.ItemStructures
         public int magSize;
         public int magCount { get; set; }
         public bool loaded = true;
-        public string name
-        {
-            get { return name; }
-            set
-            {
-                name = value;
-                AssignVariables(name);
-            }
-        }
+        public string name { get; set; }
 
         public void AssignVariables(string name)
         {
+            this.name = name;
             type = typeof(RangedWeapon);
 
             switch (name)
