@@ -5695,6 +5695,24 @@ MonoBehaviour:
   - {fileID: 1258402095}
   - {fileID: 932032981}
   - {fileID: 900254801}
+  healthSlots:
+  - {fileID: 51567655}
+  - {fileID: 880520617}
+  - {fileID: 1681701823}
+  ammoSlots:
+  - {fileID: 1083057874}
+  - {fileID: 2050159361}
+  - {fileID: 433355914}
+  - {fileID: 957069597}
+  rangedSlots:
+  - {fileID: 824777705}
+  - {fileID: 2085094368}
+  - {fileID: 734623628}
+  - {fileID: 1944385170}
+  meleeSlots:
+  - {fileID: 101272252}
+  - {fileID: 396409018}
+  - {fileID: 1985165177}
   audioSlider: {fileID: 441858023}
   fovSlider: {fileID: 649805394}
   menuUI:

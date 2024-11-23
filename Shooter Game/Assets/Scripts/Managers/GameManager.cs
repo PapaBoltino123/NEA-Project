@@ -24,7 +24,7 @@ public class GameManager : Singleton<GameManager>
     public GameData savedData = new GameData();
     public byte[,] grid = null;
 
-    public bool debugging;
+    public bool mainGameLoaded;
 
     private void Awake()
     {
@@ -36,6 +36,7 @@ public class GameManager : Singleton<GameManager>
         player.SetActive(false);
         loadingScreen.SetActive(false);
         SceneManager.LoadSceneAsync((int)SceneType.TITLESCREEN, LoadSceneMode.Additive);
+        mainGameLoaded = false;
     }
     public void LoadGame(bool isNewGame)
     {
@@ -67,6 +68,7 @@ public class GameManager : Singleton<GameManager>
             loadProgress = Mathf.Clamp01(elapsedTime / (totalTime + 7f));
         }
 
+        mainGameLoaded = false;
         loadingScreen.SetActive(false);
         scenesLoading.Clear();
     }
@@ -90,7 +92,16 @@ public class GameManager : Singleton<GameManager>
             loadProgress = Mathf.Clamp01(elapsedTime / (totalTime + 7f));
         }
 
+        mainGameLoaded = true;
+
         InGameMenuManager.Instance.SetUIActivityFalse();
+
+        int maxSize = InGameMenuManager.Instance.ammoSlots.Length +
+    InGameMenuManager.Instance.healthSlots.Length +
+    InGameMenuManager.Instance.rangedSlots.Length +
+    InGameMenuManager.Instance.meleeSlots.Length;
+        InventoryManager.Instance.MaxSize = maxSize;
+        InventoryManager.Instance.NewGame();
         InventoryManager.Instance.hotBarSlots = InGameMenuManager.Instance.hotBarSlots;
         InventoryManager.Instance.activeSlotIndex = (int)HotBarType.RANGED;
         player.SetActive(true);

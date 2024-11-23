@@ -21,6 +21,7 @@ public class Player : Singleton<Player>, Actor
     public bool isPaused = false;
 
     [SerializeField] GameObject[] bulletPrefabs;
+    [SerializeField] Animator[] weaponAnims;
     private Transform firePoint;
     private Ammo bullet;
 
@@ -102,29 +103,32 @@ public class Player : Singleton<Player>, Actor
 
             if (Input.GetMouseButtonDown(0))
             {
-                (HealthPack pack, MeleeWeapon melee, RangedWeapon ranged) tupleVariable = activeItem.GetComponent<ItemType>().ItemVariable;
-                object item = GetFirstNonNullValue(tupleVariable);
+                activeItem.GetComponent<ItemType>().AssignItem();
+                Item item = activeItem.GetComponent<ItemType>().item;
 
-                try
+                if (item.type == typeof(RangedWeapon))
                 {
-                    RangedWeapon weapon = item as RangedWeapon;
-                    weapon.AssignVariables(activeItem.name);
+                    RangedWeapon weapon = new RangedWeapon(item.name);
+                    weapon.count = item.count;
+
+                    Debug.Log(weapon.name + ", " + weapon.damage);
                     Shoot(weapon);
                 }
-                catch
+                else if (item.type == typeof(MeleeWeapon))
                 {
-                    try
-                    {
-                        MeleeWeapon weapon = item as MeleeWeapon;
-                        weapon.AssignVariables(activeItem.name);
-                        //Attack(weapon)
-                    }
-                    catch
-                    {
-                        HealthPack pack = item as HealthPack;
-                        pack.AssignVariables(activeItem.name);
-                        StartHealing(pack);
-                    }
+                    MeleeWeapon weapon = new MeleeWeapon(item.name);
+                    weapon.count = item.count;
+
+                    Debug.Log(weapon.name + ", " + weapon.damage);
+                    Attack(weapon);
+                }
+                else if (item.type == typeof(HealthPack))
+                {
+                    HealthPack pack = new HealthPack(item.name);
+                    pack.count = item.count;
+
+                    Debug.Log(pack.name + ", " + pack.effectLength);
+                    StartHealing(pack);
                 }
             }
         }
@@ -284,7 +288,7 @@ public class Player : Singleton<Player>, Actor
     private IEnumerator Heal(int healthBoost, float effectLength)
     {
         Color normalColour = GetComponent<SpriteRenderer>().color;
-        Color healingColour = new Color(21f / 255f, 202f / 255f, 0, 120f / 255f);
+        Color healingColour = new Color(21f / 255f, 202f / 255f, 0);
         float elapsedTime = 0f;
         int currentHealth = health;
         float timeStep = 0.5f;
@@ -302,10 +306,9 @@ public class Player : Singleton<Player>, Actor
         }
         gameObject.GetComponent<SpriteRenderer>().color = normalColour;
     }
-    public static object GetFirstNonNullValue((object, object, object) tuple)
+    private void Attack(MeleeWeapon weapon)
     {
-        // Use LINQ to filter out null values and then find the first non-null value
-        return new[] { tuple.Item1, tuple.Item2, tuple.Item3 }
-                .FirstOrDefault(item => item != null);  // Find the first non-null value
+        if (weapon.name == "Axe")
+            weaponAnims[(int)MeleeWeaponType.AXE].SetTrigger("attack with axe");
     }
 }

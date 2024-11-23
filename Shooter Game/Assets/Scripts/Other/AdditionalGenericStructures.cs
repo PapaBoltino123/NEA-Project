@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.ItemStructures;
 using System.Linq;
 using UnityEngine;
 
@@ -276,6 +277,73 @@ namespace System.AdditionalDataStructures
         }
         #endregion
     }
+    public class HashTable<T>
+    {
+        private T[] elements;
+        public int maxSize { get; set; }
+
+        public HashTable(int capacity)
+        {
+            maxSize = capacity;
+            elements= new T[capacity];
+        }
+
+        public void AddOrUpdate(T item)
+        {
+            string hashKey = item.ToString();
+            int hashVal = GetHashValue(hashKey);
+
+            if (elements[hashVal] != null && elements[hashVal].ToString() == item.ToString())
+                Update(item);
+            else
+                elements[hashVal] = item;
+        }
+        private void Update(T item)
+        {
+            int hashVal = GetHashValue(item.ToString());
+
+            if (elements[hashVal] != null && elements[hashVal].ToString() == item.ToString())
+            {
+                //update logic here for example if T is Item
+                if (typeof(T) == typeof(Item))
+                {
+                    if ((elements[hashVal] as Item).type == typeof(Ammo) ||
+                        (elements[hashVal] as Item).type == typeof(HealthPack))
+                    {
+                        (elements[hashVal] as Item).count += (item as Item).count;
+                    }
+                    else
+                        elements[hashVal] = item;
+                }
+            }
+        }
+        public int? Contains(T item)
+        {
+            string hashKey = item.ToString();
+            int hashVal = GetHashValue(hashKey);
+
+            if (elements[hashVal] == null)
+                return null;
+            else
+                return hashVal;
+        }
+        private int GetHashValue(string hashKey)
+        {
+            int hashVal = 0;
+
+            for (int i = 0; i < hashKey.Length; i++)
+            {
+                char c = hashKey[i];
+                hashVal += (c * i);
+            }
+
+            return hashVal % maxSize;
+        }
+        public List<T> ToList()
+        {
+            return elements.ToList();
+        }
+    }
     public enum SceneType
     {
         MANAGER = 0, //the scene is either the persisten scene which holds all the managers and is permanently active, the menu scene or the main game scene
@@ -305,5 +373,11 @@ namespace System.AdditionalDataStructures
         RIFLE = 1,
         SMG = 2,
         ROCKET = 3
+    }
+    public enum MeleeWeaponType
+    {
+        AXE = 0,
+        SWORD = 1,
+        SPEAR = 2
     }
 }

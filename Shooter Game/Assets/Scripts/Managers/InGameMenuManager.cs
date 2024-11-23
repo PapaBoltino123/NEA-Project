@@ -9,8 +9,14 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     #region Variable Declaration
     [SerializeField] public GameObject[] gameUI;
     [SerializeField] private Sprite[] slotState;
+
     public GameObject pauseScreen, inventoryScreen, healthFillArea;
     public GameObject[] hotBarSlots;
+    public GameObject[] healthSlots;
+    public GameObject[] ammoSlots;
+    public GameObject[] rangedSlots;
+    public GameObject[] meleeSlots;
+
     [SerializeField] Slider audioSlider, fovSlider;
     private Slider healthBar;
     [SerializeField] GameObject[] menuUI;
@@ -20,6 +26,7 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     {
         SetUIActivityFalse(); //the ui must not be seen behind the loading screen
         pauseScreen.SetActive(false); //the pause screen is not active
+        inventoryScreen.SetActive(false);
 
         audioSlider.value = GameManager.Instance.volume; //the value of the sliders in the pause menu must be equal to the values saved previosuly
         fovSlider.value = GameManager.Instance.zoom;
@@ -40,6 +47,18 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
                 case false:
                     LoadPauseMenu();
                     break;        
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            switch (inventoryScreen.activeSelf)
+            {
+                case true:
+                    CloseInventory();
+                    break;
+                case false:
+                    LoadInventory();
+                    break;
             }
         }
 
@@ -63,6 +82,16 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     {
         Player.Instance.isPaused = false; //the player is unpaused
         pauseScreen.SetActive(false); //hide the pause screen
+    }
+    public void LoadInventory()
+    {
+        SwitchUIActivity();
+        inventoryScreen.SetActive(true);
+    }
+    public void CloseInventory()
+    {
+        SwitchUIActivity();
+        inventoryScreen.SetActive(false);
     }
     public void SaveAndExit() //when the player presses to save and exit
     {

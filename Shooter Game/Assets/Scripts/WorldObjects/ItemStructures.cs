@@ -1,114 +1,162 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
 namespace System.ItemStructures
 {
-    public interface iItem
+    public class Item
     {
-        string name { get; set; }
-        Type type { get; set; }
-        int count { get; set; }
-        void AssignVariables(string name);
-    }
-    public class Ammo
-    {
+        public string name { get; set; }
         public Type type { get; set; }
         public int count { get; set; }
-        public string name { get; set; }
+        
+        public Item(string name)
+        {
+            string[] rangedItemNames = { "Pistol", "SMG", "RocketLauncher", "Rifle" };
+            string[] healthItemNames = { "Medkit", "Medicine", "Bandage" };
+            string[] meleeItemNames = { "Sword", "Spear", "Axe" };
+            string[] ammoItemNames = { "PistolAmmo", "SMGAmmo", "RocketLauncherAmmo", "RifleAmmo" };
 
-        public void AssignVariables(string name)
+            this.name = name;
+
+            if (rangedItemNames.Contains(name))
+                type = typeof(RangedWeapon);
+            else if (healthItemNames.Contains(name))
+                type = typeof(HealthPack);
+            else if (meleeItemNames.Contains(name))
+                type = typeof(MeleeWeapon);
+            else if (ammoItemNames.Contains(name))
+                type = typeof(Ammo);
+            else
+                throw new Exception("Invalid name");
+        }
+
+        public virtual void AssignVariables(string name)
+        {
+            Debug.Log("Assigning variables");
+        }
+        public Item ToItem()
+        {
+            Item item = new Item(this.name);
+            item.count = this.count;
+            return item;
+        }
+        public override string ToString()
+        {
+            return name;
+        }
+    }
+    public class Weapon : Item
+    {
+        public int damage { get; set; }
+        public float knockback { get; set; }
+
+        public Weapon(string name) : base(name)
+        {
+            this.name = name;
+
+            string[] rangedItemNames = { "Pistol", "SMG", "RocketLauncher", "Rifle" };
+            string[] meleeItemNames = { "Sword", "Spear", "Axe" };
+
+            if (rangedItemNames.Contains(name))
+                type = typeof(RangedWeapon);
+            else if (meleeItemNames.Contains(name))
+                type = typeof(MeleeWeapon);
+            else
+                throw new Exception("Invalid name");
+        }
+    }
+    public class Ammo : Item
+    {
+        public Ammo(string name) : base(name)
         {
             this.name = name;
             type = typeof(Ammo);
         }
     }
-    public class HealthPack : iItem
+    public class HealthPack : Item
     {
-        public Type type { get; set; }
-        public int count { get; set; }
-        public string name { get; set; }
         public int healthBoost = 0;
         public float effectLength = 0f;
 
-        public void AssignVariables(string name)
+        public HealthPack(string name) : base(name) 
         {
             this.name = name;
             type = typeof(HealthPack);
+            AssignVariables(name);
+        }
 
+        public override void AssignVariables(string name)
+        {
             switch(name)
             {
-                case "bandage":
+                case "Bandage":
                     healthBoost = 15;
                     effectLength = 1.5f;
                     break;
-                case "medicine":
+                case "Medicine":
                     healthBoost = 30;
                     effectLength = 3f;
                     break;
-                case "medkit":
+                case "Medkit":
                     healthBoost = 100;
                     effectLength = 5f;
                     break;
             }
         }
     }
-    public class MeleeWeapon : iItem
+    public class MeleeWeapon : Weapon
     {
-        public Type type { get; set; }
-        public int count { get; set; }
-        public string name { get; set; }
-        public int damage = 0;
-        public float knockback = 0f;
-        public int durability = 0;
         public float attackSpeed = 0f;
-        public void AssignVariables(string name)
+
+        public MeleeWeapon(string name) : base(name)
         {
             this.name = name;
             type = typeof(MeleeWeapon);
+            AssignVariables(name);
+        }
 
+        public override void AssignVariables(string name)
+        {
             switch (name)
             {
-                case "axe":
+                case "Axe":
                     damage = 5;
                     knockback = 0.5f;
-                    durability = 20;
                     attackSpeed = 3f;
                     break;
-                case "spear":
+                case "Spear":
                     damage = 10;
                     knockback = 2;
-                    durability = 10;
                     attackSpeed = 1.5f;
                     break;
-                case "sword":
+                case "Sword":
                     damage = 30;
                     knockback = 1f;
-                    durability = 30;
                     attackSpeed = 2f;
                     break;
             }
         }
     }
-    public class RangedWeapon
+    public class RangedWeapon : Weapon
     {
-        public Type type { get; set; }
-        public int count { get; set; }
-        public int damage;
-        public float knockback = 0f;
         public float cooldown = 0f;
         public float reloadSpeed = 0f;
         public int magSize;
         public int magCount { get; set; }
         public bool loaded = true;
-        public string name { get; set; }
 
-        public void AssignVariables(string name)
+        public RangedWeapon(string name) : base(name)
         {
             this.name = name;
             type = typeof(RangedWeapon);
+            AssignVariables(name);
+        }
 
+        public override void AssignVariables(string name)
+        {
             switch (name)
             {
                 case "Pistol":
