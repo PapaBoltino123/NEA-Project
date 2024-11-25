@@ -769,7 +769,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1865992675
 Transform:
   m_ObjectHideFlags: 0
@@ -912,7 +912,7 @@ MonoBehaviour:
     playerHealth: 50
     seed: 100000
     smoothness: 50
-  debugging: 0
+  mainGameLoaded: 0
 --- !u!4 &2055800948
 Transform:
   m_ObjectHideFlags: 0

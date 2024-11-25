@@ -10,11 +10,8 @@ namespace System.AdditionalDataStructures
     {
         #region Variables Declaration
         private Grid<Node> grid; //pathfinding variables
-        public float fCost, gCost, hCost;
         public int x, y;
         public Node parentNode;
-        public float tentativeGCost;
-        public NodeMovementType type;
 
         private string tileData; //terrain generation variables
         private int rockTileType;
@@ -26,13 +23,9 @@ namespace System.AdditionalDataStructures
             this.grid = grid; //sets initial node values
             this.x = x;
             this.y = y;
-            this.gCost = 0;
-            this.hCost = 0;
             this.tileData = "";
             this.rockTileType = 100;
             this.treeTileType = 100;
-            this.tentativeGCost = 0;
-            this.type = NodeMovementType.NONE;
         }
         #endregion 
         #region Properties
@@ -68,10 +61,6 @@ namespace System.AdditionalDataStructures
         public void UpdateNode()
         {
             this.grid.SetGridObject(this.x, this.y, this); //updates grid node if any changes are made to the node 
-        }
-        public void CalculateFCost()
-        {
-            this.fCost = this.gCost + this.hCost; //calculates the final cost of the node
         }
         public override string ToString()
         {
@@ -344,6 +333,81 @@ namespace System.AdditionalDataStructures
             return elements.ToList();
         }
     }
+    public class CustomDictionary<K, V>
+    {
+        private List<K> keys = new List<K>();
+        private List<V> values = new List<V>();
+
+        public void Add(K key, V value)
+        {
+            if (keys.Contains(key))
+                throw new System.Exception("Key already exists in the dictionary.");
+
+            keys.Add(key);
+            values.Add(value);
+        }
+
+        public bool Remove(K key)
+        {
+            int index = keys.IndexOf(key);
+            if (index == -1)
+                return false;
+
+            keys.RemoveAt(index);
+            values.RemoveAt(index);
+            return true;
+        }
+
+        public bool ContainsKey(K key)
+        {
+            return keys.Contains(key);
+        }
+
+        public V this[K key]
+        {
+            get
+            {
+                int index = keys.IndexOf(key);
+                if (index == -1)
+                    throw new System.Exception("Key not found in the dictionary.");
+
+                return values[index];
+            }
+            set
+            {
+                int index = keys.IndexOf(key);
+                if (index == -1)
+                {
+                    keys.Add(key);
+                    values.Add(value);
+                }
+                else
+                {
+                    values[index] = value;
+                }
+            }
+        }
+        public int Count
+        {
+            get { return keys.Count; }
+        }
+
+        public IEnumerable<K> Keys
+        {
+            get { return keys; }
+        }
+
+        public IEnumerable<V> Values
+        {
+            get { return values; }
+        }
+
+        public void Clear()
+        {
+            keys.Clear();
+            values.Clear();
+        }
+    }
     public enum SceneType
     {
         MANAGER = 0, //the scene is either the persisten scene which holds all the managers and is permanently active, the menu scene or the main game scene
@@ -354,12 +418,6 @@ namespace System.AdditionalDataStructures
     {
         ALIVE,
         DEAD
-    }
-    public enum NodeMovementType
-    {
-        NONE, 
-        WALK,
-        JUMP
     }
     public enum HotBarType
     {

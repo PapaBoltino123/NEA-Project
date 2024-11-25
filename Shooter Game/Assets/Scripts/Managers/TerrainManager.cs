@@ -329,34 +329,27 @@ public class TerrainManager : Singleton<TerrainManager>
         yield return new WaitForSeconds(delay);
         ChunkManager.Instance.SetInitialChunks();
     }
-    public byte[,] ReturnMapAsByteGrid()
+    public bool CheckSolidNode(Vector2Int position)
     {
-        byte[,] grid = new byte[worldWidth, worldHeight];
-        string[] walkableTileTypes = { GetTileData(TileType.STONE), GetTileData(TileType.DIRT), GetTileData(TileType.GRASS), GetTileData(TileType.LILYPAD) };
-        string[] noCollisionTypes = { GetTileData(TileType.SKY), GetTileData(TileType.FLOWER), GetTileData(TileType.TREE), GetTileData(TileType.ROCK) };
+        string[] walkableTileTypes = { GetTileData(TileType.STONE), GetTileData(TileType.DIRT), GetTileData(TileType.GRASS) };
+        bool isSolid = true;
 
-        for (int x = 0; x < worldWidth; x++)
+        if (walkableTileTypes.Contains(map.GetGridObject(position.x, position.y).TileData))
         {
-            for (int y = 0; y < worldHeight; y++)
+            if (map.GetGridObject(position.x, waterLevel - 2).TileData == GetTileData(TileType.WATER))
             {
-                grid[x, y] = 0;
-
-                if (y > 0)
-                {
-                    Node node = map.GetGridObject(x, y);
-
-                    if (noCollisionTypes.Contains(node.TileData))
-                    {
-                        Node nodeBelow = map.GetGridObject(x, y - 1);
-
-                        if (walkableTileTypes.Contains(nodeBelow.TileData))
-                            grid[x, y] = 1;
-                    }
-                }
+                if (map.GetGridObject(position.x, position.y).TileData == GetTileData(TileType.LILYPAD))
+                    isSolid = true;
+                else
+                    isSolid = false;
             }
+            else
+                isSolid = true;
         }
+        else
+            isSolid = false;
 
-        return grid;
+        return isSolid;
     }
     #endregion
 }

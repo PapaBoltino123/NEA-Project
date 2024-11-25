@@ -1,6 +1,7 @@
 using System.AdditionalDataStructures;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class Zombie : MonoBehaviour
@@ -8,74 +9,53 @@ public class Zombie : MonoBehaviour
     public delegate void PathFoundCallback(List<Node> path);
     private float speed;
     private float jumpForce;
-    private byte[,] byteMap = null;
     private Grid<Node> nodeMap = null;
     private Pathfinder pathfinder;
     private List<Node> path;
     private BoxCollider2D boxCollider;
     private Rigidbody2D rb;
     [SerializeField] LayerMask groundLayer;
+    private float gravity;
     bool runTest = true;
 
     private void Awake()
     {
+        gravity = System.Math.Abs(Physics2D.gravity.y);
         rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         speed = ZombieManager.Instance.speed;
         jumpForce = ZombieManager.Instance.jumpForce;
         nodeMap = ZombieManager.Instance.nodeMap;
-        byteMap = ZombieManager.Instance.byteMap;
-
-        if (byteMap != null && nodeMap != null)
-        {
-            pathfinder = new Pathfinder(nodeMap, byteMap, speed, jumpForce);
-        }
+        pathfinder = ZombieManager.Instance.pathfinder;
     }
-    private void Update()
+
+    private void Start()
     {
-        if (IsGrounded() == true && runTest == true)
-        {
-            FindNewPath();
-
-            runTest = false;
-        }
+        StartCoroutine(CalculatePath());
     }
+
     private void FindNewPath()
     {
-        (int x, int y) startCoords = nodeMap.GetXY(transform.position);
-        (int x, int y) endCoords = nodeMap.GetXY(Player.Instance.transform.position);
-
-        pathfinder.FindPath(startCoords.x, startCoords.y, endCoords.x, endCoords.y, OnPathFound);
+        pathfinder.FindPath(nodeMap.GetGridObject(transform.position), nodeMap.GetGridObject(Player.Instance.transform.position),OnPathFound);
     }
     public void OnPathFound(List<Node> path)
     {
         this.path = path;
-        Debug.Log(path.Count);
+    }
 
-        StartCoroutine(FollowPath());
-    }
-    public void Jump(int direction, float jumpForce, Rigidbody2D rb)
+    private float CalculateMaxJumpHeight()
     {
-        rb.velocity = new Vector2(speed * direction, jumpForce);
+        float maxHeight = (jumpForce * jumpForce) / (2 * gravity);
+        return maxHeight;
     }
-    public void Move(int direction, float speed, Rigidbody2D rb)
+    private float CalculateMaxJumpWidth()
     {
-        rb.velocity = new Vector3(direction * speed, rb.velocity.y);
-        if (direction > 0)
-        {
-            transform.localScale = Vector3.one;
-        }
-        if (direction < 0)
-        {
-            transform.localScale = new Vector3(-1, 1, 1);
-        }
+        float maxDistance = (2 * speed * jumpForce) / gravity;
+        return maxDistance;
     }
-    public void Walk(Node currentNode, Node nextNode, int direction)
+    private int ConvertToGrid(float n)
     {
-        if (currentNode.y == nextNode.y)
-            StartCoroutine(WalkOneNode(direction));
-        else
-            StartCoroutine(WalkThenFall(currentNode, nextNode, direction));
+        return (int)System.Math.Floor(n / nodeMap.CellSize);
     }
     private bool IsGrounded()
     {
@@ -90,64 +70,19 @@ public class Zombie : MonoBehaviour
         else
             return false;
     }
-    private IEnumerator WalkOneNode(int direction)
+    private IEnumerator CalculatePath()
     {
-        int frames = (int)System.Math.Ceiling((decimal)(0.16f / (speed * Time.fixedDeltaTime)));
-        float distancePerFrame = 0.16f / frames;
-
-        for (int i = 0; i < frames; i++)
+        while (IsGrounded() == false)
         {
-            Move(direction, speed, rb);
-            yield return new WaitForFixedUpdate();
+            yield return null;
         }
-    }
-    private IEnumerator WalkThenFall(Node currentNode, Node targetNode, int direction)
-    {
-        while (nodeMap.GetGridObject(transform.position) != currentNode && IsGrounded() == false)
+        FindNewPath();
+
+        yield return new WaitForSeconds(5f);
+
+        foreach (var node in path)
         {
-            Move(direction, speed, rb);
-            yield return new WaitForFixedUpdate();
+            Debug.Log(node);
         }
-    }
-    private IEnumerator FollowPath()
-    {
-        for (int i = 0; i < path.Count; i++)
-        {
-            Node currentNode = path[i];
-
-            if (i + 1 < path.Count)
-            {
-                Node nextNode = path[i + 1];
-
-                int direction = (nextNode.x > currentNode.x) ? 1 : -1;
-
-                int jumpTargetX = currentNode.x + direction;
-                float initialVelocityX = direction * speed;
-                float initialVelocityY = jumpForce;
-
-                (int? landingX, int? landingY) = pathfinder.SimulateJump(currentNode.x, currentNode.y, initialVelocityX, initialVelocityY);
-
-                if (landingX.HasValue && landingY.HasValue)
-                {
-                    if (landingX == nextNode.x && landingY == nextNode.y)
-                        Jump(direction, jumpForce, rb);
-                    else
-                        Walk(currentNode, nextNode, direction);
-                }
-                else
-                    Walk(currentNode, nextNode, direction);
-
-                while (nodeMap.GetGridObject(transform.position) != nextNode)
-                    yield return null;
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
-    private void Attack()
-    {
-        Debug.Log("Attacking player");
     }
 }

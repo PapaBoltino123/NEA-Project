@@ -22,10 +22,11 @@ public class ChunkManager : Singleton<ChunkManager>
 
     private const int LEFTRANGE = -2;
     private const int RIGHTRANGE = 1;
+    public Rect loadedArea;
     public int poolSize = 20;    
     public float chunkLifetime = 10f;   
     public CustomQueue<GameObject> chunkPool;   
-    public Dictionary<Vector2Int, GameObject> activeChunks;
+    public CustomDictionary<Vector2Int, GameObject> activeChunks;
 
     bool canLoadInChunksOnUpdate;
     #endregion
@@ -48,6 +49,7 @@ public class ChunkManager : Singleton<ChunkManager>
             if (currentMapChunkPosition != initialMapChunkPosition)
             {
                 UpdateChunks(initialMapChunkPosition);
+                loadedArea = GetChunkLoadBounds(initialMapChunkPosition);
             }
 
             initialMapChunkPosition = new Vector2Int((playerMapPosition.x / TerrainManager.Instance.chunkWidth) * TerrainManager.Instance.chunkWidth, 0);
@@ -151,7 +153,7 @@ public class ChunkManager : Singleton<ChunkManager>
     {
         canLoadInChunksOnUpdate = false;
         chunkPool = new CustomQueue<GameObject>();
-        activeChunks = new Dictionary<Vector2Int, GameObject>();
+        activeChunks = new CustomDictionary<Vector2Int, GameObject>();
 
         for (int i = 0; i < poolSize; i++)
         {
@@ -174,7 +176,7 @@ public class ChunkManager : Singleton<ChunkManager>
             if (loadedData == null)
             {
                 Debug.Log(loadedData);
-                throw new Exception("Shit");
+                throw new Exception("error");
             }
         }
 
@@ -184,6 +186,7 @@ public class ChunkManager : Singleton<ChunkManager>
 
         List<Vector2Int> chunksToLoad = new List<Vector2Int>();
         Rect bounds = GetChunkLoadBounds(initialMapChunkPosition);
+        loadedArea = bounds;
 
         for (int x = (int)bounds.xMin; x < bounds.xMax; x += TerrainManager.Instance.chunkWidth)
         {

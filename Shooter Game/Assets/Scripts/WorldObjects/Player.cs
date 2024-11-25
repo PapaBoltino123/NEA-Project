@@ -120,7 +120,7 @@ public class Player : Singleton<Player>, Actor
                     weapon.count = item.count;
 
                     Debug.Log(weapon.name + ", " + weapon.damage);
-                    Attack(weapon);
+                    StartCoroutine(Attack(weapon));
                 }
                 else if (item.type == typeof(HealthPack))
                 {
@@ -306,9 +306,13 @@ public class Player : Singleton<Player>, Actor
         }
         gameObject.GetComponent<SpriteRenderer>().color = normalColour;
     }
-    private void Attack(MeleeWeapon weapon)
+    private IEnumerator Attack(MeleeWeapon weapon)
     {
         if (weapon.name == "Axe")
-            weaponAnims[(int)MeleeWeaponType.AXE].SetTrigger("attack with axe");
+            weaponAnims[(int)MeleeWeaponType.AXE].Play("attack_axe");
+
+        yield return new WaitForSeconds(0.25f);
+
+        weaponAnims[(int)MeleeWeaponType.AXE].Play("idle_axe");
     }
 }
