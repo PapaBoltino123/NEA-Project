@@ -9,26 +9,22 @@ namespace System.Algorithms.Pathfinding
 {
     public class AStar
     {
-        private CustomDictionary<int, Vector2Int> points = new CustomDictionary<int, Vector2Int>();
-        private CustomDictionary<int, List<int>> connections = new CustomDictionary<int, List<int>>();
-        private Grid<Node> map;
+        List<Vector2Int> points = new List<Vector2Int>();
+        private CustomDictionary<Vector2Int, List<Vector2Int>> connections = new CustomDictionary<Vector2Int, List<Vector2Int>>();
+        public Grid<Node> nodeMap;
+        public byte[,] byteMap;
 
-        public AStar()
+        public void AddPoint(Vector2Int position)
         {
-            map = TerrainManager.Instance.ReturnWorldMap();
-        }
-
-        public void AddPoint(int id, Vector2Int position)
-        {
-            if (!points.ContainsKey(id))
+            if (!points.Contains(position))
             {
-                points[id] = position;
-                connections[id] = new List<int>();
+                points.Add(position);
+                connections[position] = new List<Vector2Int>();
             }
         }
-        public void ConnectPoints(int point1, int point2, bool canReturnToPoint1)
+        public void ConnectPoints(Vector2Int point1, Vector2Int point2, bool canReturnToPoint1)
         {
-            if (!points.ContainsKey(point1) || !points.ContainsKey(point2))
+            if (!points.Contains(point1) || !points.Contains(point2))
                 return;
 
             if (!connections[point1].Contains(point2))
@@ -37,24 +33,23 @@ namespace System.Algorithms.Pathfinding
             if (canReturnToPoint1 == true && !connections[point2].Contains(point1))
                 connections[point2].Add(point1);
         }
-        public int GetClosestPoint(Vector2Int position)
+        public Vector2Int GetClosestPoint(Vector2Int position)
         {
-            int closestID = -1;
+            Vector2Int closestPosition = Vector2Int.zero;
             float closestDistance = float.MaxValue;
 
-            foreach (var k in points.Keys)
+            foreach (var p in points)
             {
-                var point = points[k];
-                float distance = CalculateDistance(point, position);
+                float distance = CalculateDistance(p, position);
 
                 if (distance < closestDistance)
                 {
                     closestDistance = distance;
-                    closestID = k;
+                    closestPosition = p;
                 }
             }
 
-            return closestID;
+            return closestPosition;
         }
         public float CalculateDistance(Vector2 point1, Vector2 point2)
         {
@@ -63,43 +58,43 @@ namespace System.Algorithms.Pathfinding
 
             return Mathf.Sqrt(deltaX * deltaX + deltaY * deltaY);
         }
-        private float HeuristicCost(int iD1, int iD2)
+        private float HeuristicCost(Vector2Int iD1, Vector2Int iD2)
         {
-            return CalculateDistance(points[iD1], points[iD2]);
+            return CalculateDistance(iD1, iD2);
         }
-        public List<Node> GetIDPath(int startID, int endID)
+        public List<Node> GetIDPath(Vector2Int start, Vector2Int end)
         {
-            if (!points.ContainsKey(startID) || !points.ContainsKey(endID))
+            if (!points.Contains(start) || !points.Contains(end))
                 return null;
 
-            CustomPriorityQueue<int> open = new CustomPriorityQueue<int>();
+            CustomPriorityQueue<Vector2Int> open = new CustomPriorityQueue<Vector2Int>();
             List<Node> closed = new List<Node>();
-            CustomDictionary<int, float> gCosts = new CustomDictionary<int, float>();
-            CustomDictionary<int, float> fCosts = new CustomDictionary<int, float>();
+            CustomDictionary<Vector2Int, float> gCosts = new CustomDictionary<Vector2Int, float>();
+            CustomDictionary<Vector2Int, float> fCosts = new CustomDictionary<Vector2Int, float>();
 
-            gCosts[startID] = 0;
-            fCosts[startID] = HeuristicCost(startID, endID);
-            open.Enqueue(startID, fCosts[startID]);
+            gCosts[start] = 0;
+            fCosts[start] = HeuristicCost(start, end);
+            open.Enqueue(start, fCosts[start]);
 
             while (open.Count > 0)
             {
-                int current = open.Dequeue();
+                Vector2Int current = open.Dequeue();
 
-                if (current == endID)
+                if (current == end)
                     return ReconstructPath(current);
 
-                foreach (int neighbour in connections[current])
+                foreach (var neighbour in connections[current])
                 {
-                    float tentativeGCost = gCosts[current] + CalculateDistance(points[current], points[neighbour]);
+                    float tentativeGCost = gCosts[current] + CalculateDistance(current, neighbour);
 
                     if (!gCosts.ContainsKey(neighbour) || tentativeGCost < gCosts[neighbour])
                     {
-                        Node parentNode = map.GetGridObject(points[current].x, points[current].y);
-                        Node neighbourNode = map.GetGridObject(points[neighbour].x, points[neighbour].y);
+                        Node parentNode = nodeMap.GetGridObject(current.x, current.y);
+                        Node neighbourNode = nodeMap.GetGridObject(neighbour.x, neighbour.y);
 
                         neighbourNode.parentNode = parentNode;
                         gCosts[neighbour] = tentativeGCost;
-                        fCosts[neighbour] = tentativeGCost + HeuristicCost(neighbour, endID);
+                        fCosts[neighbour] = tentativeGCost + HeuristicCost(neighbour, end);
 
                         if (!open.Contains(neighbour))
                             open.Enqueue(neighbour, fCosts[neighbour]);
@@ -110,42 +105,23 @@ namespace System.Algorithms.Pathfinding
             return new List<Node>();
         }
 
-        public IEnumerable<int> GetPoints()
+        public IEnumerable<Vector2Int> GetPoints()
         {
-            return points.Keys;
+            return points;
         }
-        public Vector2Int GetPointPosition(int iD)
+        public List<Vector2Int> GetConnectedPoints(Vector2Int iD)
         {
-            return (points.ContainsKey(iD)) ? points[iD] : Vector2Int.zero;
-        }
-        public List<int> GetConnectedPoints(int iD)
-        {
-            return (connections.ContainsKey(iD)) ? connections[iD] : new List<int>();
+            return (connections.ContainsKey(iD)) ? connections[iD] : new List<Vector2Int>();
         }
         public bool HasPointAtPosition(Vector2Int position)
         {
-            foreach (var k in points.Keys)
-            {
-                if (points[k] == position)
-                    return true;
-            }
-            return false;
+            return points.Contains(position);
         }
-        public int GetAvailablePointID()
-        {
-            int iD = 0;
-
-            while (points.ContainsKey(iD))
-            {
-                iD++;
-            }
-            return iD;
-        }
-        private List<Node> ReconstructPath(int end)
+        private List<Node> ReconstructPath(Vector2Int end)
         {
             List<Node> path = new List<Node>();
 
-            Node node = map.GetGridObject(points[end].x, points[end].y);
+            Node node = nodeMap.GetGridObject(end.x, end.y);
             path.Add(node);
 
             while (node.parentNode != null)
@@ -157,11 +133,11 @@ namespace System.Algorithms.Pathfinding
             path.Reverse();
             return path;
         }
-        public void RemovePoint(int iD)
+        public void RemovePoint(Vector2Int iD)
         {
             points.Remove(iD);
         }
-        public bool CheckConnectionExists(int pointA, int pointB)
+        public bool CheckConnectionExists(Vector2Int pointA, Vector2Int pointB)
         {
             if (!connections.ContainsKey(pointA))
                 return false;

@@ -111,13 +111,11 @@ public class GameManager : Singleton<GameManager>
         else
             fileManager.LoadGame();
 
-        yield return new WaitForSeconds(5f);
+        ZombieManager.Instance.pathfinder = TerrainManager.Instance.pathfinder;
         ZombieManager.Instance.nodeMap = TerrainManager.Instance.ReturnWorldMap();
-        int jumpHeight = ZombieManager.Instance.ConvertToGrid(ZombieManager.Instance.CalculateMaxJumpHeight());
-        int jumpWidth = ZombieManager.Instance.ConvertToGrid(ZombieManager.Instance.CalculateMaxJumpWidth());
-        ZombieManager.Instance.pathfinder = new Pathfinder(jumpHeight, jumpWidth);
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(7f);
+
         Player.Instance.rb.constraints = RigidbodyConstraints2D.None;
         Player.Instance.rb.constraints = RigidbodyConstraints2D.FreezeRotation;
 

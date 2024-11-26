@@ -24,37 +24,43 @@ public class Pathfinder
     public int jumpDistance;
     public Grid<Node> map;
 
-    private AStar graph;
+    public AStar graph;
     private static SynchronizationContext mainThreadContext;
     private CustomDictionary<Vector2Int, Vector2Int> unresolvedDropPoints = new CustomDictionary<Vector2Int, Vector2Int>();
     Thread pathfindingThread;
 
     public Pathfinder(int jumpHeight, int jumpDistance)
     {
-        this.jumpHeight = jumpHeight;
         this.jumpDistance = jumpDistance;
+        this.jumpHeight = jumpHeight;
         map = TerrainManager.Instance.ReturnWorldMap();
         graph = new AStar();
         mainThreadContext = SynchronizationContext.Current;
+        byte[,] byteMap = TerrainManager.Instance.ReturnMapAsByteGrid();
+
+        for (int x = 0; x < byteMap.GetLength(0); x++)
+        {
+            int y = Enumerable.Range(0, byteMap.GetLength(1))
+                .Select(i => byteMap[x, i])
+                .ToList()
+                .FindIndex(n => n == 1);
+
+            graph.AddPoint(new Vector2Int(x, y));
+        }
     }
     public void CreateConnections()
     {
-        foreach (int point in graph.GetPoints())
+        foreach (var position in graph.GetPoints())
         {
-            Vector2Int position = graph.GetPointPosition(point);
-            Vector2Int cellType = GetCellType(position, true);
+            List<Vector2Int> twoWayPoints = new List<Vector2Int>();
+            List<Vector2Int> oneWayPoints = new List<Vector2Int>();
 
-            List<int> twoWayPoints = new List<int>();
-            List<int> oneWayPoints = new List<int>();
-
-            foreach (int newPoint in graph.GetPoints())
+            foreach (var newPosition in graph.GetPoints())
             {
-                Vector2Int newPosition = graph.GetPointPosition(newPoint);
-
-                if (cellType.y  == 0 && Mathf.Approximately(newPosition.y, position.y) && newPosition.x > position.x)
+                if (cellType.y == 0 && Mathf.Approximately(newPosition.y, position.y) && newPosition.x > position.x)
                 {
-                    if (!graph.CheckConnectionExists(point, newPoint))
-                        twoWayPoints.Add(newPoint);
+                    if (!graph.CheckConnectionExists(position, newPosition))
+                        twoWayPoints.Add(newPosition);
                 }
 
                 if (cellType.x == -1)
@@ -62,8 +68,8 @@ public class Pathfinder
                     // Normal drop to left (bidirectional if new point is reachable)
                     if (newPosition.x == position.x - 1 && newPosition.y > position.y)
                     {
-                        if (!graph.CheckConnectionExists(point, newPoint))
-                            twoWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(position, newPosition))
+                            twoWayPoints.Add(newPosition);
                     }
                     else if (newPosition.y >= position.y - jumpHeight &&
                     newPosition.y <= position.y &&
@@ -71,15 +77,15 @@ public class Pathfinder
                              newPosition.x < position.x &&
                              GetCellType(newPosition, true).y == -1)
                     {
-                        if (!graph.CheckConnectionExists(point, newPoint))
-                            twoWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(position, newPosition))
+                            twoWayPoints.Add(newPosition);
                     }
 
                     // One-way drop to left (if no way to return)
                     else if (newPosition.x < position.x && newPosition.y >= position.y - jumpHeight)
                     {
-                        if (!graph.CheckConnectionExists(point, newPoint))
-                            oneWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(position, newPosition))
+                            oneWayPoints.Add(newPosition);
                     }
                 }
 
@@ -89,8 +95,8 @@ public class Pathfinder
                     // Normal drop to right (bidirectional if new point is reachable)
                     if (newPosition.x == position.x + 1 && newPosition.y > position.y)
                     {
-                        if (!graph.CheckConnectionExists(point, newPoint))
-                            twoWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(position, newPosition))
+                            twoWayPoints.Add(newPosition);
                     }
                     else if (newPosition.y >= position.y - jumpHeight &&
                     newPosition.y <= position.y &&
@@ -98,58 +104,26 @@ public class Pathfinder
                              newPosition.x > position.x &&
                              GetCellType(newPosition, true).x == -1)
                     {
-                        if (!graph.CheckConnectionExists(point, newPoint))
-                            twoWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(position, newPosition))
+                            twoWayPoints.Add(newPosition);
                     }
 
                     else if (newPosition.x > position.x && newPosition.y >= position.y - jumpHeight)
                     {
-                        if (!graph.CheckConnectionExists(point, newPoint))
-                            oneWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(position, newPosition))
+                            oneWayPoints.Add(newPosition);
                     }
                 }
             }
 
             // Add connections to the graph
-            foreach (int joinPoint in twoWayPoints)
+            foreach (Vector2Int joinPoint in twoWayPoints)
             {
-                graph.ConnectPoints(point, joinPoint, true); // Bidirectional connection
+                graph.ConnectPoints(position, joinPoint, true); // Bidirectional connection
             }
-            foreach (int joinPoint in oneWayPoints)
+            foreach (Vector2Int joinPoint in oneWayPoints)
             {
-                graph.ConnectPoints(point, joinPoint, false); // One-way connection
-            }
-        }
-    }
-    public void AddChunkToGraph(Vector2Int chunkPosition)
-    {
-        for (int x = chunkPosition.x; x < chunkPosition.x + TerrainManager.Instance.chunkWidth; x++)
-        {
-            for (int y = 0; y < TerrainManager.Instance.chunkHeight; y++)
-            {
-                if (TerrainManager.Instance.CheckSolidNode(new Vector2Int(x, y)) == false)
-                    continue;
-
-                CreatePoint(new Vector2Int(x, y));
-
-                if (GetCellType(new Vector2Int(x, y), false).x == -1)
-                    CheckForDropPoint(new Vector2Int(x, y), Vector2Int.left);
-                if (GetCellType(new Vector2Int(x, y), false).y == -1)
-                    CheckForDropPoint(new Vector2Int(x, y), Vector2Int.right);
-            }
-        }
-    }
-    public void RemoveChunkFromGraph(Vector2Int chunkPosition)
-    {
-        for (int x = chunkPosition.x; x < chunkPosition.x + TerrainManager.Instance.chunkWidth; x++)
-        {
-            for (int y = 0; y < TerrainManager.Instance.chunkHeight; y++)
-            {
-                Vector2Int position = new Vector2Int(x, y);
-                int id = graph.GetClosestPoint(position);
-
-                if (id != -1)
-                    graph.RemovePoint(id);
+                graph.ConnectPoints(position, joinPoint, false); // One-way connection
             }
         }
     }
@@ -178,33 +152,12 @@ public class Pathfinder
         return result;
     }
 
-    private void CreatePoint(Vector2Int position)
+    public void CreatePoint(Vector2Int position)
     {
         if (graph.HasPointAtPosition(position) == true)
             return;
 
-        int pointID = graph.GetAvailablePointID();
-        graph.AddPoint(pointID, position);
-    }
-    private void CheckForDropPoint(Vector2Int position, Vector2Int direction)
-    {
-        Vector2Int startGridPosition = position;
-        Vector2Int endGridPosition = startGridPosition + direction * jumpDistance + Vector2Int.down * jumpHeight;
-
-        if (IsChunkLoaded(endGridPosition) == false)
-        {
-            if (!unresolvedDropPoints.ContainsKey(position))
-                unresolvedDropPoints[position] = direction;
-            return;
-        }
-
-        Vector3 startWorldPositon = map.GetWorldPosition(startGridPosition.x, startGridPosition.y);
-        Vector3 endWorldPosition = map.GetWorldPosition(endGridPosition.x, endGridPosition.y);
-
-        RaycastHit2D hit = Physics2D.Raycast(startWorldPositon, endWorldPosition - startWorldPositon);
-
-        if (hit.collider != null)
-            CreatePoint(new Vector2Int(map.GetXY(hit.point).x, map.GetXY(hit.point).y));
+        graph.AddPoint(position);
     }
     public void FindPath(Node start, Node end, Zombie.PathFoundCallback pathFoundCallback)
     {
@@ -213,8 +166,8 @@ public class Pathfinder
             Vector2Int startPoint = new Vector2Int(start.x, start.y);
             Vector2Int endPoint = new Vector2Int(end.x, end.y);
             // Get the closest points in the graph to the start and end positions
-            int firstPoint = graph.GetClosestPoint(startPoint);
-            int finish = graph.GetClosestPoint(endPoint);
+            Vector2Int firstPoint = graph.GetClosestPoint(startPoint);
+            Vector2Int finish = graph.GetClosestPoint(endPoint);
 
             // Get the path as a list of point IDs
             List<Node> path = graph.GetIDPath(firstPoint, finish);
@@ -229,28 +182,6 @@ public class Pathfinder
         Vector2Int chunkPosition = new Vector2Int((position.x / TerrainManager.Instance.chunkWidth)
             * TerrainManager.Instance.chunkWidth, 0);
         return ChunkManager.Instance.activeChunks.ContainsKey(chunkPosition);
-    }
-    public void ProcessUnresolvedDropPoints()
-    {
-        var processedPoints = new List<Vector2Int>();
-
-        foreach (var k in unresolvedDropPoints.Keys)
-        {
-            Vector2Int position = k;
-            Vector2Int direction = unresolvedDropPoints[k];
-
-            CheckForDropPoint(position, direction);
-
-            if (IsChunkLoaded(position + direction * jumpDistance + Vector2Int.down * jumpHeight))
-            {
-                processedPoints.Add(position);
-            }
-        }
-
-        foreach (var point in processedPoints)
-        {
-            unresolvedDropPoints.Remove(point);
-        }
     }
 }
 

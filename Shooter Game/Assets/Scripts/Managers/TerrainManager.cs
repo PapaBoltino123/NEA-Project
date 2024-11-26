@@ -14,6 +14,7 @@ using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine.UIElements;
 using System.AddtionalEventStructures;
 using UnityEditor;
+using System.Algorithms.Pathfinding;
 
 public class TerrainManager : Singleton<TerrainManager>
 {
@@ -32,6 +33,7 @@ public class TerrainManager : Singleton<TerrainManager>
     private PerlinNoise perlinNoise; //the class used to determine perlin height values
     private Grid<Node> map; //the map of nodes 
     public float cellSize = 0.16f; //the size of each cell in the map
+
     #endregion
     #region Methods
     private void Start()
@@ -136,7 +138,9 @@ public class TerrainManager : Singleton<TerrainManager>
             if (plantChance == 4)
             {
                 if (isWater == true)
+                {
                     LoadMapData(x, waterLevel - 1, x + 1, waterLevel, TileType.LILYPAD);
+                }
                 else if (isWater == false)
                 {
                     LoadMapData(x, surfaceHeights[x], x + 1, surfaceHeights[x] + 1, TileType.FLOWER);
@@ -350,6 +354,28 @@ public class TerrainManager : Singleton<TerrainManager>
             isSolid = false;
 
         return isSolid;
+    }
+    public byte[,] ReturnMapAsByteGrid()
+    {
+        byte[,] grid = new byte[worldWidth, worldHeight];
+
+        for (int x = 0; x < worldWidth;  x++)
+        {
+            grid[x, surfaceHeights[x]] = 1;
+
+            if (map.GetGridObject(x, waterLevel - 2).TileData == GetTileData(TileType.WATER))
+            {
+                for (int y = 0; y < waterLevel + 2; y++)
+                {
+                    grid[x, surfaceHeights[x]] = 0;
+
+                    if (map.GetGridObject(x, y).TileData == GetTileData(TileType.LILYPAD))
+                        grid[x, surfaceHeights[x]] = 1;
+                }
+            }
+        }
+
+        return grid;
     }
     #endregion
 }

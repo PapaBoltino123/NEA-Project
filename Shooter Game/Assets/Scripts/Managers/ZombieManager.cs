@@ -28,18 +28,4 @@ public class ZombieManager : Singleton<ZombieManager>
     {
         GameObject zombie = Instantiate(zombiePrefab, new Vector3(Player.Instance.transform.position.x - 3.2f, 20, 0), Quaternion.identity);
     }
-    public float CalculateMaxJumpHeight()
-    {
-        float maxHeight = (jumpForce * jumpForce) / (2 * gravity);
-        return maxHeight;
-    }
-    public float CalculateMaxJumpWidth()
-    {
-        float maxDistance = (2 * speed * jumpForce) / gravity;
-        return maxDistance;
-    }
-    public int ConvertToGrid(float n)
-    {
-        return (int)System.Math.Floor(n / nodeMap.CellSize);
-    }
 }
