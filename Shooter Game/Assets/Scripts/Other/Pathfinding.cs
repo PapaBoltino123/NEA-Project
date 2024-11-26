@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.AdditionalDataStructures;
+using Unity.VisualScripting;
+using System.Runtime.InteropServices;
 
 namespace System.Algorithms.Pathfinding
 {
@@ -154,6 +156,17 @@ namespace System.Algorithms.Pathfinding
 
             path.Reverse();
             return path;
+        }
+        public void RemovePoint(int iD)
+        {
+            points.Remove(iD);
+        }
+        public bool CheckConnectionExists(int pointA, int pointB)
+        {
+            if (!connections.ContainsKey(pointA))
+                return false;
+
+            return connections[pointA].Contains(pointB);
         }
     }
 }

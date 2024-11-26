@@ -102,6 +102,14 @@ public class ChunkManager : Singleton<ChunkManager>
         chunk.SetActive(true);
         chunk.transform.position = chunkWorldPosition;
         activeChunks[chunkMapPosition] = chunk;
+
+        try
+        {
+            ZombieManager.Instance.pathfinder.AddChunkToGraph(chunkMapPosition);
+            ZombieManager.Instance.pathfinder.CreateConnections();
+        }
+        catch { }
+
         chunk.GetComponent<Chunk>().Load();
     }
     private void UnloadChunk(Vector2Int mapChunkPosition)
@@ -115,6 +123,8 @@ public class ChunkManager : Singleton<ChunkManager>
         chunk.SetActive(false);
         chunkPool.Enqueue(chunk);
         activeChunks.Remove(mapChunkPosition);
+
+        ZombieManager.Instance.pathfinder.RemoveChunkFromGraph(mapChunkPosition);
     }
     public void UpdateChunks(Vector2Int initialChunkMapPosition)
     {

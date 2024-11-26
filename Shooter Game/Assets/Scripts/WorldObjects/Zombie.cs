@@ -36,7 +36,7 @@ public class Zombie : MonoBehaviour
 
     private void FindNewPath()
     {
-        pathfinder.FindPath(nodeMap.GetGridObject(transform.position), nodeMap.GetGridObject(Player.Instance.transform.position),OnPathFound);
+        pathfinder.FindPath(nodeMap.GetGridObject(transform.position), nodeMap.GetGridObject(Player.Instance.transform.position), OnPathFound);
     }
     public void OnPathFound(List<Node> path)
     {

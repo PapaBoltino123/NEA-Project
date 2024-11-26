@@ -26,6 +26,7 @@ public class Pathfinder
 
     private AStar graph;
     private static SynchronizationContext mainThreadContext;
+    private CustomDictionary<Vector2Int, Vector2Int> unresolvedDropPoints = new CustomDictionary<Vector2Int, Vector2Int>();
     Thread pathfindingThread;
 
     public Pathfinder(int jumpHeight, int jumpDistance)
@@ -34,10 +35,9 @@ public class Pathfinder
         this.jumpDistance = jumpDistance;
         map = TerrainManager.Instance.ReturnWorldMap();
         graph = new AStar();
-        CreateMap();
-        CreateConnections();
+        mainThreadContext = SynchronizationContext.Current;
     }
-    private void CreateConnections()
+    public void CreateConnections()
     {
         foreach (int point in graph.GetPoints())
         {
@@ -52,14 +52,18 @@ public class Pathfinder
                 Vector2Int newPosition = graph.GetPointPosition(newPoint);
 
                 if (cellType.y  == 0 && Mathf.Approximately(newPosition.y, position.y) && newPosition.x > position.x)
-                    twoWayPoints.Add(newPoint);
+                {
+                    if (!graph.CheckConnectionExists(point, newPoint))
+                        twoWayPoints.Add(newPoint);
+                }
 
                 if (cellType.x == -1)
                 {
                     // Normal drop to left (bidirectional if new point is reachable)
                     if (newPosition.x == position.x - 1 && newPosition.y > position.y)
                     {
-                        twoWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(point, newPoint))
+                            twoWayPoints.Add(newPoint);
                     }
                     else if (newPosition.y >= position.y - jumpHeight &&
                     newPosition.y <= position.y &&
@@ -67,13 +71,15 @@ public class Pathfinder
                              newPosition.x < position.x &&
                              GetCellType(newPosition, true).y == -1)
                     {
-                        twoWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(point, newPoint))
+                            twoWayPoints.Add(newPoint);
                     }
 
                     // One-way drop to left (if no way to return)
                     else if (newPosition.x < position.x && newPosition.y >= position.y - jumpHeight)
                     {
-                        oneWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(point, newPoint))
+                            oneWayPoints.Add(newPoint);
                     }
                 }
 
@@ -83,7 +89,8 @@ public class Pathfinder
                     // Normal drop to right (bidirectional if new point is reachable)
                     if (newPosition.x == position.x + 1 && newPosition.y > position.y)
                     {
-                        twoWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(point, newPoint))
+                            twoWayPoints.Add(newPoint);
                     }
                     else if (newPosition.y >= position.y - jumpHeight &&
                     newPosition.y <= position.y &&
@@ -91,12 +98,14 @@ public class Pathfinder
                              newPosition.x > position.x &&
                              GetCellType(newPosition, true).x == -1)
                     {
-                        twoWayPoints.Add(newPoint);
+                        if (!graph.CheckConnectionExists(point, newPoint))
+                            twoWayPoints.Add(newPoint);
                     }
 
                     else if (newPosition.x > position.x && newPosition.y >= position.y - jumpHeight)
                     {
-                        oneWayPoints.Add(newPoint); // Only move right, can't go back
+                        if (!graph.CheckConnectionExists(point, newPoint))
+                            oneWayPoints.Add(newPoint);
                     }
                 }
             }
@@ -112,23 +121,35 @@ public class Pathfinder
             }
         }
     }
-    private void CreateMap()
+    public void AddChunkToGraph(Vector2Int chunkPosition)
     {
-        for (int x = (int)ChunkManager.Instance.loadedArea.xMin; x < (int)ChunkManager.Instance.loadedArea.xMax; x++)
+        for (int x = chunkPosition.x; x < chunkPosition.x + TerrainManager.Instance.chunkWidth; x++)
         {
-            for (int y = 0; y < map.Height; y++)
+            for (int y = 0; y < TerrainManager.Instance.chunkHeight; y++)
             {
-                Node node = map.GetGridObject(x, y);
-
-                if (TerrainManager.Instance.CheckSolidNode(new Vector2Int(node.x, node.y)) == false)
+                if (TerrainManager.Instance.CheckSolidNode(new Vector2Int(x, y)) == false)
                     continue;
 
-                CreatePoint(new Vector2Int(node.x, node.y));
+                CreatePoint(new Vector2Int(x, y));
 
-                if (GetCellType(new Vector2Int(node.x, node.y), false).x == -1)
-                    CheckForDropPoint(new Vector2Int(node.x, node.y), Vector2Int.left);
-                if (GetCellType(new Vector2Int(node.x, node.y), false).y == -1)
-                    CheckForDropPoint(new Vector2Int(node.x, node.y), Vector2Int.right);
+                if (GetCellType(new Vector2Int(x, y), false).x == -1)
+                    CheckForDropPoint(new Vector2Int(x, y), Vector2Int.left);
+                if (GetCellType(new Vector2Int(x, y), false).y == -1)
+                    CheckForDropPoint(new Vector2Int(x, y), Vector2Int.right);
+            }
+        }
+    }
+    public void RemoveChunkFromGraph(Vector2Int chunkPosition)
+    {
+        for (int x = chunkPosition.x; x < chunkPosition.x + TerrainManager.Instance.chunkWidth; x++)
+        {
+            for (int y = 0; y < TerrainManager.Instance.chunkHeight; y++)
+            {
+                Vector2Int position = new Vector2Int(x, y);
+                int id = graph.GetClosestPoint(position);
+
+                if (id != -1)
+                    graph.RemovePoint(id);
             }
         }
     }
@@ -169,6 +190,14 @@ public class Pathfinder
     {
         Vector2Int startGridPosition = position;
         Vector2Int endGridPosition = startGridPosition + direction * jumpDistance + Vector2Int.down * jumpHeight;
+
+        if (IsChunkLoaded(endGridPosition) == false)
+        {
+            if (!unresolvedDropPoints.ContainsKey(position))
+                unresolvedDropPoints[position] = direction;
+            return;
+        }
+
         Vector3 startWorldPositon = map.GetWorldPosition(startGridPosition.x, startGridPosition.y);
         Vector3 endWorldPosition = map.GetWorldPosition(endGridPosition.x, endGridPosition.y);
 
@@ -195,6 +224,33 @@ public class Pathfinder
         pathfindingThread.Start();
         GameManager.Instance.activeThreads.Add(pathfindingThread);
     }
+    private bool IsChunkLoaded(Vector2Int position)
+    {
+        Vector2Int chunkPosition = new Vector2Int((position.x / TerrainManager.Instance.chunkWidth)
+            * TerrainManager.Instance.chunkWidth, 0);
+        return ChunkManager.Instance.activeChunks.ContainsKey(chunkPosition);
+    }
+    public void ProcessUnresolvedDropPoints()
+    {
+        var processedPoints = new List<Vector2Int>();
 
+        foreach (var k in unresolvedDropPoints.Keys)
+        {
+            Vector2Int position = k;
+            Vector2Int direction = unresolvedDropPoints[k];
+
+            CheckForDropPoint(position, direction);
+
+            if (IsChunkLoaded(position + direction * jumpDistance + Vector2Int.down * jumpHeight))
+            {
+                processedPoints.Add(position);
+            }
+        }
+
+        foreach (var point in processedPoints)
+        {
+            unresolvedDropPoints.Remove(point);
+        }
+    }
 }
 
