@@ -2,6 +2,7 @@ using System.AdditionalDataStructures;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class ZombieManager : Singleton<ZombieManager>
 {
@@ -12,6 +13,8 @@ public class ZombieManager : Singleton<ZombieManager>
     public Grid<Node> nodeMap;
     [SerializeField] GameObject zombiePrefab;
     public Pathfinder pathfinder;
+    public Tilemap testMap;
+    public TileBase test;
 
     private void Awake()
     {

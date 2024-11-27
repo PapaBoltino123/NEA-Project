@@ -27,6 +27,7 @@ public class Pathfinder
     public AStar graph;
     private static SynchronizationContext mainThreadContext;
     private CustomDictionary<Vector2Int, Vector2Int> unresolvedDropPoints = new CustomDictionary<Vector2Int, Vector2Int>();
+    List<Vector2Int> pointsWithoutFiltration = new List<Vector2Int>();
     Thread pathfindingThread;
 
     public Pathfinder(int jumpHeight, int jumpDistance)
@@ -45,120 +46,152 @@ public class Pathfinder
                 .ToList()
                 .FindIndex(n => n == 1);
 
-            graph.AddPoint(new Vector2Int(x, y));
+            pointsWithoutFiltration.Add(new Vector2Int(x, y));
         }
+
+        foreach (var p in pointsWithoutFiltration)
+        {
+            if (IsNodeAtCorner(p, pointsWithoutFiltration) == true)
+                graph.AddPoint(p);
+        }
+
+        CreateConnections();
     }
-    public void CreateConnections()
+    private void CreateConnections()
     {
-        foreach (var position in graph.GetPoints())
+        foreach (var point in graph.GetPoints())
         {
             List<Vector2Int> twoWayPoints = new List<Vector2Int>();
             List<Vector2Int> oneWayPoints = new List<Vector2Int>();
 
-            foreach (var newPosition in graph.GetPoints())
+            List<Vector2Int> points = graph.GetPoints().ToList();
+            int pointIndex = points.IndexOf(point);
+
+            List<Vector2Int> neighbouringPoints = new List<Vector2Int>();
+
+            if (pointIndex == 0)
+                neighbouringPoints.Add(points[pointIndex + 1]);
+            else if (pointIndex == points.Count - 1)
+                neighbouringPoints.Add(points[pointIndex - 1]);
+            else
             {
-                if (cellType.y == 0 && Mathf.Approximately(newPosition.y, position.y) && newPosition.x > position.x)
+                neighbouringPoints.Add(points[pointIndex + 1]);
+                neighbouringPoints.Add(points[pointIndex - 1]);
+            }
+
+            foreach (var newPoint in neighbouringPoints)
+            {
+                if (newPoint.y == point.y)
                 {
-                    if (!graph.CheckConnectionExists(position, newPosition))
-                        twoWayPoints.Add(newPosition);
+                    if (!graph.CheckConnectionExists(point, newPoint))
+                        twoWayPoints.Add(newPoint);
                 }
-
-                if (cellType.x == -1)
+                else if (newPoint.y > point.y)
                 {
-                    // Normal drop to left (bidirectional if new point is reachable)
-                    if (newPosition.x == position.x - 1 && newPosition.y > position.y)
-                    {
-                        if (!graph.CheckConnectionExists(position, newPosition))
-                            twoWayPoints.Add(newPosition);
-                    }
-                    else if (newPosition.y >= position.y - jumpHeight &&
-                    newPosition.y <= position.y &&
-                             newPosition.x > position.x - (jumpDistance + 2) &&
-                             newPosition.x < position.x &&
-                             GetCellType(newPosition, true).y == -1)
-                    {
-                        if (!graph.CheckConnectionExists(position, newPosition))
-                            twoWayPoints.Add(newPosition);
-                    }
-
-                    // One-way drop to left (if no way to return)
-                    else if (newPosition.x < position.x && newPosition.y >= position.y - jumpHeight)
-                    {
-                        if (!graph.CheckConnectionExists(position, newPosition))
-                            oneWayPoints.Add(newPosition);
-                    }
+                    if (point.y + jumpHeight >= newPoint.y)
+                        oneWayPoints.Add(newPoint);
+                    else
+                        twoWayPoints.Add(newPoint);
                 }
-
-                // Right-side drop connections
-                if (cellType.y == -1)
+                else if (newPoint.y < point.y)
                 {
-                    // Normal drop to right (bidirectional if new point is reachable)
-                    if (newPosition.x == position.x + 1 && newPosition.y > position.y)
-                    {
-                        if (!graph.CheckConnectionExists(position, newPosition))
-                            twoWayPoints.Add(newPosition);
-                    }
-                    else if (newPosition.y >= position.y - jumpHeight &&
-                    newPosition.y <= position.y &&
-                             newPosition.x < position.x + (jumpDistance + 2) &&
-                             newPosition.x > position.x &&
-                             GetCellType(newPosition, true).x == -1)
-                    {
-                        if (!graph.CheckConnectionExists(position, newPosition))
-                            twoWayPoints.Add(newPosition);
-                    }
-
-                    else if (newPosition.x > position.x && newPosition.y >= position.y - jumpHeight)
-                    {
-                        if (!graph.CheckConnectionExists(position, newPosition))
-                            oneWayPoints.Add(newPosition);
-                    }
+                    if (point.y + jumpHeight >= newPoint.y)
+                        oneWayPoints.Add(newPoint);
+                    else
+                        twoWayPoints.Add(newPoint);
                 }
             }
 
-            // Add connections to the graph
             foreach (Vector2Int joinPoint in twoWayPoints)
             {
-                graph.ConnectPoints(position, joinPoint, true); // Bidirectional connection
+                graph.ConnectPoints(point, joinPoint, true); // Bidirectional connection
             }
             foreach (Vector2Int joinPoint in oneWayPoints)
             {
-                graph.ConnectPoints(position, joinPoint, false); // One-way connection
+                graph.ConnectPoints(point, joinPoint, false); // One-way connection
             }
         }
     }
-    private Vector2Int GetCellType(Vector2Int position, bool isAbove)
-    {
-        Vector2Int cell = position;
 
-        if (isAbove == true)
-            cell += Vector2Int.down;
+    //public void CreateConnections()
+    //{
+    //    foreach (var position in graph.GetPoints())
+    //    {
+    //        List<Vector2Int> twoWayPoints = new List<Vector2Int>();
+    //        List<Vector2Int> oneWayPoints = new List<Vector2Int>();
 
-        if (TerrainManager.Instance.CheckSolidNode(cell + Vector2Int.up) == true)
-            return Vector2Int.zero;
+    //        foreach (var newPosition in graph.GetPoints())
+    //        {
+    //            if (cellType.y == 0 && Mathf.Approximately(newPosition.y, position.y) && newPosition.x > position.x)
+    //            {
+    //                if (!graph.CheckConnectionExists(position, newPosition))
+    //                    twoWayPoints.Add(newPosition);
+    //            }
 
-        Vector2Int result = Vector2Int.zero;
+    //            if (cellType.x == -1)
+    //            {
+    //                // Normal drop to left (bidirectional if new point is reachable)
+    //                if (newPosition.x == position.x - 1 && newPosition.y > position.y)
+    //                {
+    //                    if (!graph.CheckConnectionExists(position, newPosition))
+    //                        twoWayPoints.Add(newPosition);
+    //                }
+    //                else if (newPosition.y >= position.y - jumpHeight &&
+    //                newPosition.y <= position.y &&
+    //                         newPosition.x > position.x - (jumpDistance + 2) &&
+    //                         newPosition.x < position.x &&
+    //                         GetCellType(newPosition, true).y == -1)
+    //                {
+    //                    if (!graph.CheckConnectionExists(position, newPosition))
+    //                        twoWayPoints.Add(newPosition);
+    //                }
 
-        if (TerrainManager.Instance.CheckSolidNode(cell + Vector2Int.up + Vector2Int.left) == true)
-            result.x = 1;
-        else if (TerrainManager.Instance.CheckSolidNode(cell + Vector2Int.left) == false)
-            result.x = -1;
+    //                // One-way drop to left (if no way to return)
+    //                else if (newPosition.x < position.x && newPosition.y >= position.y - jumpHeight)
+    //                {
+    //                    if (!graph.CheckConnectionExists(position, newPosition))
+    //                        oneWayPoints.Add(newPosition);
+    //                }
+    //            }
 
-        if (TerrainManager.Instance.CheckSolidNode(cell + Vector2Int.up + Vector2Int.right) == true)
-            result.y = 1;
-        else if (TerrainManager.Instance.CheckSolidNode(cell + Vector2Int.right) == false)
-            result.y = -1;
+    //            // Right-side drop connections
+    //            if (cellType.y == -1)
+    //            {
+    //                // Normal drop to right (bidirectional if new point is reachable)
+    //                if (newPosition.x == position.x + 1 && newPosition.y > position.y)
+    //                {
+    //                    if (!graph.CheckConnectionExists(position, newPosition))
+    //                        twoWayPoints.Add(newPosition);
+    //                }
+    //                else if (newPosition.y >= position.y - jumpHeight &&
+    //                newPosition.y <= position.y &&
+    //                         newPosition.x < position.x + (jumpDistance + 2) &&
+    //                         newPosition.x > position.x &&
+    //                         GetCellType(newPosition, true).x == -1)
+    //                {
+    //                    if (!graph.CheckConnectionExists(position, newPosition))
+    //                        twoWayPoints.Add(newPosition);
+    //                }
 
-        return result;
-    }
+    //                else if (newPosition.x > position.x && newPosition.y >= position.y - jumpHeight)
+    //                {
+    //                    if (!graph.CheckConnectionExists(position, newPosition))
+    //                        oneWayPoints.Add(newPosition);
+    //                }
+    //            }
+    //        }
 
-    public void CreatePoint(Vector2Int position)
-    {
-        if (graph.HasPointAtPosition(position) == true)
-            return;
-
-        graph.AddPoint(position);
-    }
+    //        // Add connections to the graph
+    //        foreach (Vector2Int joinPoint in twoWayPoints)
+    //        {
+    //            graph.ConnectPoints(position, joinPoint, true); // Bidirectional connection
+    //        }
+    //        foreach (Vector2Int joinPoint in oneWayPoints)
+    //        {
+    //            graph.ConnectPoints(position, joinPoint, false); // One-way connection
+    //        }
+    //    }
+    //}
     public void FindPath(Node start, Node end, Zombie.PathFoundCallback pathFoundCallback)
     {
         pathfindingThread = new Thread(() =>
@@ -177,11 +210,31 @@ public class Pathfinder
         pathfindingThread.Start();
         GameManager.Instance.activeThreads.Add(pathfindingThread);
     }
-    private bool IsChunkLoaded(Vector2Int position)
+    private bool IsNodeAtCorner(Vector2Int position, List<Vector2Int> unfilteredNodes)
     {
-        Vector2Int chunkPosition = new Vector2Int((position.x / TerrainManager.Instance.chunkWidth)
-            * TerrainManager.Instance.chunkWidth, 0);
-        return ChunkManager.Instance.activeChunks.ContainsKey(chunkPosition);
+        if (position.x == 0 || position.x == TerrainManager.Instance.worldWidth - 1)
+            return true;
+        else
+        {
+            int positionIndex = unfilteredNodes.IndexOf(position);
+
+            if (unfilteredNodes[positionIndex + 1].y != position.y)
+                return true;
+            else if (unfilteredNodes[positionIndex - 1].y != position.y)
+                return true;
+            else
+                return false;
+        }
+    }
+    public (Vector2Int pointA, Vector2Int pointB) GetClosestPoints(Node node)
+    {
+        Vector2Int position = new Vector2Int(node.x, node.y);
+        List<Vector2Int> points = graph.GetPoints().ToList();
+        Vector2Int pointA = graph.GetClosestPoint(position);
+        int direction = (pointA.x > position.x) ? -1 : 1;
+        Vector2Int pointB = points[points.IndexOf(pointA) + direction];
+
+        return (pointA, pointB);
     }
 }
 

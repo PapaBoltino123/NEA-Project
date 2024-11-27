@@ -438,4 +438,11 @@ namespace System.AdditionalDataStructures
         SWORD = 1,
         SPEAR = 2
     }
+    public enum LastZombieMovement
+    {
+        NONE,
+        WALK,
+        JUMP,
+        FALL
+    }
 }

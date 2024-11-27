@@ -4,6 +4,7 @@ using UnityEngine;
 using System.AdditionalDataStructures;
 using Unity.VisualScripting;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace System.Algorithms.Pathfinding
 {
@@ -12,13 +13,18 @@ namespace System.Algorithms.Pathfinding
         List<Vector2Int> points = new List<Vector2Int>();
         private CustomDictionary<Vector2Int, List<Vector2Int>> connections = new CustomDictionary<Vector2Int, List<Vector2Int>>();
         public Grid<Node> nodeMap;
-        public byte[,] byteMap;
+
+        public AStar()
+        {
+            nodeMap = TerrainManager.Instance.ReturnWorldMap();
+        }
 
         public void AddPoint(Vector2Int position)
         {
             if (!points.Contains(position))
             {
                 points.Add(position);
+                points = points.OrderBy(p => p.x).ToList();
                 connections[position] = new List<Vector2Int>();
             }
         }
@@ -71,6 +77,7 @@ namespace System.Algorithms.Pathfinding
             List<Node> closed = new List<Node>();
             CustomDictionary<Vector2Int, float> gCosts = new CustomDictionary<Vector2Int, float>();
             CustomDictionary<Vector2Int, float> fCosts = new CustomDictionary<Vector2Int, float>();
+            int nodesProcessed = 0;
 
             gCosts[start] = 0;
             fCosts[start] = HeuristicCost(start, end);
@@ -79,9 +86,13 @@ namespace System.Algorithms.Pathfinding
             while (open.Count > 0)
             {
                 Vector2Int current = open.Dequeue();
+                nodesProcessed++;
 
                 if (current == end)
                     return ReconstructPath(current);
+
+                if (nodesProcessed > 500)
+                    break;
 
                 foreach (var neighbour in connections[current])
                 {

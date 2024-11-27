@@ -137,7 +137,10 @@ public class Player : Singleton<Player>, Actor
             rb.velocity = Vector2.zero;
             anim.SetBool("run", false);
         }
-
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            Debug.Log(TerrainManager.Instance.ReturnWorldMap().GetGridObject(transform.position));
+        }
         InGameMenuManager.Instance.gameUI.First().GetComponent<Text>().text = $"Score: {score}";
         InGameMenuManager.Instance.gameUI[1].GetComponent<Slider>().value = health;
         InGameMenuManager.Instance.gameUI.Last().GetComponent<Text>().text = Convert.ToString(health);
