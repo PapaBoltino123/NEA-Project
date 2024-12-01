@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using System.AdditionalDataStructures;
 using System.AddtionalEventStructures;
 using System.Threading;
+using UnityEngine.UI;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -17,6 +18,8 @@ public class GameManager : Singleton<GameManager>
     public float loadProgress = 0;
 
     [SerializeField] GameObject loadingScreen;
+    public GameObject deathScreen;
+    public Text score;
     List<AsyncOperation> scenesLoading = new List<AsyncOperation>();
 
     public FileManager fileManager;
@@ -130,11 +133,25 @@ public class GameManager : Singleton<GameManager>
         InGameMenuManager.Instance.SwitchUIActivity();
         InventoryManager.Instance.hotBarSlots = null;
         Player.Instance.EndUpdatingScore();
+        deathScreen.SetActive(false);
         loadingScreen.SetActive(true);
         scenesLoading.Add(SceneManager.UnloadSceneAsync((int)SceneType.MAINGAME));
         scenesLoading.Add(SceneManager.LoadSceneAsync((int)SceneType.TITLESCREEN, LoadSceneMode.Additive));
 
         StartCoroutine(GetMenuSceneLoadProgress());
+    }
+    public void OnPlayerDeath()
+    {
+        foreach (var chunk in ChunkManager.Instance.chunkPool.ToList())
+        {
+            Destroy(chunk);
+        }
+        foreach(var chunk in ChunkManager.Instance.activeChunks.Values)
+        {
+            Destroy(chunk);
+        }
+        fileManager.SaveGame();
+        LoadMainMenu();
     }
     private void OnApplicationQuit()
     {

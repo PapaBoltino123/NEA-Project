@@ -35,6 +35,7 @@ public class Player : Singleton<Player>, Actor
     Animator anim = new Animator();
 
     bool isJumping;
+    bool isDrowning = false;
     private float moveInput = 0;
     public PlayerState playerState = PlayerState.ALIVE;
 
@@ -154,6 +155,13 @@ public class Player : Singleton<Player>, Actor
             isJumping = false;
         }
     }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Water"))
+        {
+            StartCoroutine(Drown());
+        }
+    }
     public void Move(float moveInput, float speed, Rigidbody2D rb, Animator anim)
     {
         rb.velocity = new Vector3(moveInput * speed, rb.velocity.y);
@@ -255,6 +263,7 @@ public class Player : Singleton<Player>, Actor
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         boxCollider = GetComponent<BoxCollider2D>();
+        rb.gravityScale = 1;
 
         GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame);
         GameManager.Instance.fileManager.dataBroadcast.SendNewData += new EventHandler<DataEventArgs>(NewGame);
@@ -290,6 +299,8 @@ public class Player : Singleton<Player>, Actor
     }
     private IEnumerator Heal(int healthBoost, float effectLength)
     {
+        float normalSpeed = speed;
+        float newSpeed = 0.5f;
         Color normalColour = GetComponent<SpriteRenderer>().color;
         Color healingColour = new Color(21f / 255f, 202f / 255f, 0);
         float elapsedTime = 0f;
@@ -297,9 +308,10 @@ public class Player : Singleton<Player>, Actor
         float timeStep = 0.5f;
         int healthPerTimeStep = (int)(healthBoost / effectLength);
 
-        while (health < 100 && elapsedTime < effectLength)
+        while (health < 100 && elapsedTime < effectLength && isDrowning == false)
         {
             gameObject.GetComponent<SpriteRenderer>().color = healingColour;
+            speed = newSpeed;
             currentHealth += healthPerTimeStep;
             currentHealth = System.Math.Min(currentHealth, 100);
             health = currentHealth;
@@ -307,6 +319,7 @@ public class Player : Singleton<Player>, Actor
             yield return new WaitForSeconds(timeStep);
             elapsedTime += timeStep;
         }
+        speed = normalSpeed;
         gameObject.GetComponent<SpriteRenderer>().color = normalColour;
     }
     private IEnumerator Attack(MeleeWeapon weapon)
@@ -317,5 +330,45 @@ public class Player : Singleton<Player>, Actor
         yield return new WaitForSeconds(0.25f);
 
         weaponAnims[(int)MeleeWeaponType.AXE].Play("idle_axe");
+    }
+    private IEnumerator Drown()
+    {
+        isDrowning = true;
+        float normalSpeed = speed;
+        Color normalColour = GetComponent<SpriteRenderer>().color;
+        Color damageColour = new Color(219f / 255f, 0, 0);
+        Color barColour = new Color(0f, 0f, 139f / 255f);
+
+        while (health > 0)
+        {
+            int currentHealth = health;
+            speed = 0.5f;
+            rb.gravityScale = 0.001f;
+            rb.mass = 0.5f;
+            currentHealth -= 20;
+
+            gameObject.GetComponent<SpriteRenderer>().color = damageColour;
+            yield return new WaitForSeconds(0.1f);
+
+            gameObject.GetComponent<SpriteRenderer>().color = normalColour;
+            currentHealth = System.Math.Max(currentHealth, 0);
+            health = currentHealth;
+
+            yield return new WaitForSeconds(0.9f);
+        }
+
+        speed = normalSpeed;
+        rb.mass = 1;
+        rb.gravityScale = 1;
+
+        isDrowning = false;
+        OnPlayerDeath();
+    }
+    private void OnPlayerDeath()
+    {
+        playerState = PlayerState.DEAD;
+        EndUpdatingScore();
+        GameManager.Instance.score.text = "Final score: " + score;
+        GameManager.Instance.deathScreen.SetActive(true);
     }
 }

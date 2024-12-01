@@ -83,14 +83,14 @@ public class Zombie : MonoBehaviour
             yield return null;
         }
 
-        Vector2 direction = (Player.Instance.transform.position.x > transform.position.x) ? Vector2.left : Vector2.right;
+        //Vector2 direction = (Player.Instance.transform.position.x > transform.position.x) ? Vector2.left : Vector2.right;
 
-        if (TerrainLevelChange() == true)
-        {
-            StartCoroutine(WalkDistance((int)direction.x, (float)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x))));
-        }
-        else
-            FindNewPath();
+        //if (TerrainLevelChange() == true)
+        //{
+        //    StartCoroutine(WalkDistance((int)direction.x, (float)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x))));
+        //}
+        //else
+        FindNewPath();
 
         yield return new WaitForSeconds(3);
 
@@ -98,10 +98,10 @@ public class Zombie : MonoBehaviour
         {
             FollowPath();
         }
-        else if (TerrainLevelChange() == true)
-        {
-            StartCoroutine(WalkDistance((int)direction.x, (float)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x))));
-        }
+        //else if (TerrainLevelChange() == true)
+        //{
+        //    StartCoroutine(WalkDistance((int)direction.x, (float)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x))));
+        //}
     }
     private void FollowPath()
     {
