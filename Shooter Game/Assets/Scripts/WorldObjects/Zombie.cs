@@ -2,6 +2,7 @@ using System.AdditionalDataStructures;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -46,6 +47,20 @@ public class Zombie : MonoBehaviour
     {
         this.path = path;
         path.Insert(0, nodeMap.GetGridObject(transform.position));
+
+        int direction = transform.position.x < Player.Instance.transform.position.x ? 1 : -1;
+
+        if (direction > 0)
+        {
+            if (path.Last().x > Player.Instance.transform.position.x)
+                path.Remove(path.Last());
+        }
+        else if (direction < 0)
+        {
+            if (path.Last().x < Player.Instance.transform.position.x)
+                path.Remove(path.Last());
+        }
+
         path.Add(nodeMap.GetGridObject(Player.Instance.transform.position));
     }
 
@@ -83,6 +98,26 @@ public class Zombie : MonoBehaviour
             yield return null;
         }
 
+        Debug.Log(TerrainLevelChange());
+        if (TerrainLevelChange() == true)
+        {
+            FindNewPath();
+
+            yield return new WaitForSeconds(5);
+
+            try
+            {
+                if (path.Count > 0)
+                {
+                    FollowPath();
+                }
+            }
+            catch
+            {
+                Destroy(gameObject);
+            }
+        }
+
         //Vector2 direction = (Player.Instance.transform.position.x > transform.position.x) ? Vector2.left : Vector2.right;
 
         //if (TerrainLevelChange() == true)
@@ -90,14 +125,7 @@ public class Zombie : MonoBehaviour
         //    StartCoroutine(WalkDistance((int)direction.x, (float)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x))));
         //}
         //else
-        FindNewPath();
 
-        yield return new WaitForSeconds(3);
-
-        if (path.Count > 0)
-        {
-            FollowPath();
-        }
         //else if (TerrainLevelChange() == true)
         //{
         //    StartCoroutine(WalkDistance((int)direction.x, (float)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x))));
@@ -175,10 +203,35 @@ public class Zombie : MonoBehaviour
     }
     private bool TerrainLevelChange()
     {
-        List<int> heights = TerrainManager.Instance.surfaceHeights.Skip(nodeMap.GetXY(transform.position).x)
-            .Take((int)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x)))
-            .ToList();
+        int distance = System.Math.Abs(ZombieManager.Instance.nodeMap.GetXY(Player.Instance.transform.position).x - ZombieManager.Instance.nodeMap.GetXY(transform.position).x);
+        int direction = Player.Instance.transform.position.x > transform.position.x ? 1 : -1;
 
-        return !(heights.All(item => item == heights[0]));
+        if (ZombieManager.Instance.nodeMap.GetXY(transform.position).y != ZombieManager.Instance.nodeMap.GetXY(Player.Instance.transform.position).y)
+            return true;
+
+        int startIndex = ZombieManager.Instance.nodeMap.GetXY(Player.Instance.transform.position).x;
+
+        for (int i = startIndex; i < startIndex + (distance * direction); i += direction)
+        {
+            try
+            {
+                List<byte> column = Enumerable.Range(0, ZombieManager.Instance.byteMap.GetLength(1))
+                .Select(n => ZombieManager.Instance.byteMap[i, n])
+                .ToList();
+
+                if (!column.Contains(1))
+                    return true;
+                if (column.FindIndex(n => n == 1) != ZombieManager.Instance.nodeMap.GetXY(Player.Instance.transform.position).y)
+                    return true;
+                else
+                    continue;
+            }
+            catch
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

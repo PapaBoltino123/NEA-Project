@@ -266,49 +266,45 @@ namespace System.AdditionalDataStructures
         }
         #endregion
     }
-    public class HashTable<T>
+    public class HashTable
     {
-        private T[] elements;
+        private Item[] elements;
         public int maxSize { get; set; }
 
         public HashTable(int capacity)
         {
             maxSize = capacity;
-            elements= new T[capacity];
+            elements= new Item[capacity];
         }
 
-        public void AddOrUpdate(T item)
+        public void AddOrUpdate(Item item)
         {
-            string hashKey = item.ToString();
+            string hashKey = item.name;
             int hashVal = GetHashValue(hashKey);
 
-            if (elements[hashVal] != null && elements[hashVal].ToString() == item.ToString())
+            if (elements[hashVal] != null && elements[hashVal].name == item.name)
                 Update(item);
             else
                 elements[hashVal] = item;
         }
-        private void Update(T item)
+        private void Update(Item item)
         {
-            int hashVal = GetHashValue(item.ToString());
+            int hashVal = GetHashValue(item.name);
 
-            if (elements[hashVal] != null && elements[hashVal].ToString() == item.ToString())
+            if (elements[hashVal] != null && elements[hashVal].name == item.name)
             {
-                //update logic here for example if T is Item
-                if (typeof(T) == typeof(Item))
+                if (elements[hashVal].type == typeof(Ammo) ||
+                                        elements[hashVal].type == typeof(HealthPack))
                 {
-                    if ((elements[hashVal] as Item).type == typeof(Ammo) ||
-                        (elements[hashVal] as Item).type == typeof(HealthPack))
-                    {
-                        (elements[hashVal] as Item).count += (item as Item).count;
-                    }
-                    else
-                        elements[hashVal] = item;
+                    (elements[hashVal]).count += (item).count;
                 }
+                else
+                    elements[hashVal] = item;
             }
         }
-        public int? Contains(T item)
+        public int? Contains(Item item)
         {
-            string hashKey = item.ToString();
+            string hashKey = item.name;
             int hashVal = GetHashValue(hashKey);
 
             if (elements[hashVal] == null)
@@ -328,9 +324,13 @@ namespace System.AdditionalDataStructures
 
             return hashVal % maxSize;
         }
-        public List<T> ToList()
+        public List<Item> ToList()
         {
             return elements.ToList();
+        }
+        public int Count()
+        {
+            return elements.Length;
         }
     }
     public class CustomDictionary<K, V>
@@ -437,12 +437,5 @@ namespace System.AdditionalDataStructures
         AXE = 0,
         SWORD = 1,
         SPEAR = 2
-    }
-    public enum LastZombieMovement
-    {
-        NONE,
-        WALK,
-        JUMP,
-        FALL
     }
 }

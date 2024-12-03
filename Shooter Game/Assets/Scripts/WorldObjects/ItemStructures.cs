@@ -17,7 +17,7 @@ namespace System.ItemStructures
             string[] rangedItemNames = { "Pistol", "SMG", "RocketLauncher", "Rifle" };
             string[] healthItemNames = { "Medkit", "Medicine", "Bandage" };
             string[] meleeItemNames = { "Sword", "Spear", "Axe" };
-            string[] ammoItemNames = { "PistolAmmo", "SMGAmmo", "RocketLauncherAmmo", "RifleAmmo" };
+            string[] ammoItemNames = { "PistolAmmo", "SMGAmmo", "RocketAmmo", "RifleAmmo" };
 
             this.name = name;
 

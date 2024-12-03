@@ -100,15 +100,22 @@ namespace System.Algorithms.Pathfinding
 
                     if (!gCosts.ContainsKey(neighbour) || tentativeGCost < gCosts[neighbour])
                     {
-                        Node parentNode = nodeMap.GetGridObject(current.x, current.y);
-                        Node neighbourNode = nodeMap.GetGridObject(neighbour.x, neighbour.y);
+                        try
+                        {
+                            Node parentNode = nodeMap.GetGridObject(current.x, current.y);
+                            Node neighbourNode = nodeMap.GetGridObject(neighbour.x, neighbour.y);
 
-                        neighbourNode.parentNode = parentNode;
-                        gCosts[neighbour] = tentativeGCost;
-                        fCosts[neighbour] = tentativeGCost + HeuristicCost(neighbour, end);
+                            neighbourNode.parentNode = parentNode;
+                            gCosts[neighbour] = tentativeGCost;
+                            fCosts[neighbour] = tentativeGCost + HeuristicCost(neighbour, end);
 
-                        if (!open.Contains(neighbour))
-                            open.Enqueue(neighbour, fCosts[neighbour]);
+                            if (!open.Contains(neighbour))
+                                open.Enqueue(neighbour, fCosts[neighbour]);
+                        }
+                        catch
+                        {
+                            return new List<Node>();
+                        }
                     }
                 }
             }

@@ -16,6 +16,7 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     public GameObject[] ammoSlots;
     public GameObject[] rangedSlots;
     public GameObject[] meleeSlots;
+    public GameObject[] inventoryHotBarSlots;
 
     [SerializeField] Slider audioSlider, fovSlider;
     private Slider healthBar;

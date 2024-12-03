@@ -203,9 +203,16 @@ public class Pathfinder
             Vector2Int finish = graph.GetClosestPoint(endPoint);
 
             // Get the path as a list of point IDs
-            List<Node> path = graph.GetIDPath(firstPoint, finish);
-
-            mainThreadContext.Post(_ => pathFoundCallback(path), null);
+            calculatePath:
+            try
+            {
+                List<Node> path = graph.GetIDPath(firstPoint, finish);
+                mainThreadContext.Post(_ => pathFoundCallback(path), null);
+            }
+            catch
+            {
+                goto calculatePath;
+            }
         });
         pathfindingThread.Start();
         GameManager.Instance.activeThreads.Add(pathfindingThread);

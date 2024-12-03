@@ -98,12 +98,7 @@ public class GameManager : Singleton<GameManager>
         mainGameLoaded = true;
 
         InGameMenuManager.Instance.SetUIActivityFalse();
-
-        int maxSize = InGameMenuManager.Instance.ammoSlots.Length +
-    InGameMenuManager.Instance.healthSlots.Length +
-    InGameMenuManager.Instance.rangedSlots.Length +
-    InGameMenuManager.Instance.meleeSlots.Length;
-        InventoryManager.Instance.MaxSize = maxSize;
+        InventoryManager.Instance.MaxSize = 500;
         InventoryManager.Instance.NewGame();
         InventoryManager.Instance.hotBarSlots = InGameMenuManager.Instance.hotBarSlots;
         InventoryManager.Instance.activeSlotIndex = (int)HotBarType.RANGED;
