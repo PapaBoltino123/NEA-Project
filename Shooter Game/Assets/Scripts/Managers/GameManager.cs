@@ -109,7 +109,6 @@ public class GameManager : Singleton<GameManager>
         else
             fileManager.LoadGame();
 
-        ZombieManager.Instance.pathfinder = new Pathfinder(3, 2);
         ZombieManager.Instance.nodeMap = TerrainManager.Instance.ReturnWorldMap();
 
         yield return new WaitForSeconds(7f);

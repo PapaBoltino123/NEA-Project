@@ -14,12 +14,14 @@ public class InventoryManager : Singleton<InventoryManager>
     public GameObject activeSlot;
     public int activeSlotIndex;
     public HashTable inventory;
+    List<Item> activeItems;
 
     public int MaxSize
     {
         get { return inventory.maxSize; }
         set
         {
+            activeItems = new List<Item>();
             inventory = new HashTable(value);
         }
     }
@@ -97,24 +99,6 @@ public class InventoryManager : Singleton<InventoryManager>
                             slot.SetActive(false);
                         }
                     }
-                    for (int i = 0; i < InGameMenuManager.Instance.inventoryHotBarSlots.Length; i++)
-                    {
-                        GameObject slotObject = InGameMenuManager.Instance.inventoryHotBarSlots[i].gameObject;
-                        slotObject.SetActive(true);
-
-                        string slotName = hotBarSlots[i].transform.Cast<Transform>()
-                                        .Select(child => child.gameObject)
-                                        .OrderByDescending(child => child.activeSelf)
-                                        .ToList()
-                                        .First()
-                                        .name;
-
-                        if (slotObject.transform.Find(slotName).gameObject != null)
-                        {
-                            GameObject slot = slotObject.transform.Find(slotName).gameObject;
-                            slot.SetActive(true);
-                        }
-                    }
                 }
             }
         }
@@ -131,6 +115,7 @@ public class InventoryManager : Singleton<InventoryManager>
         foreach (var item in initialItems)
         {
             Item itemToAdd = new Item(item);
+            activeItems.Add(itemToAdd);
             itemToAdd.count = (itemToAdd.name == "PistolAmmo") ? 30 : 1;
             inventory.AddOrUpdate(itemToAdd);
         }

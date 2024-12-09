@@ -161,6 +161,14 @@ public class Player : Singleton<Player>, Actor
         {
             StartCoroutine(Drown());
         }
+        else if (collision.CompareTag("Collectable"))
+        {
+            GameObject item = collision.gameObject;
+            item.GetComponent<ItemType>().AssignItem();
+            Item itemToAdd = item.GetComponent<ItemType>().item;
+            InventoryManager.Instance.inventory.AddOrUpdate(itemToAdd);
+            Destroy(collision.gameObject);
+        }
     }
     public void Move(float moveInput, float speed, Rigidbody2D rb, Animator anim)
     {

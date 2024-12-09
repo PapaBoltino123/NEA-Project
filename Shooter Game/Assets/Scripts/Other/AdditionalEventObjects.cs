@@ -8,11 +8,16 @@ namespace System.AddtionalEventStructures
     {
         public GameData gameData; 
     }
+    public class DamageEventArgs : EventArgs
+    {
+        public Damage damage;
+    }
     public class EventBroadcaster
     {
         public event EventHandler<DataEventArgs> SendLoadedData;
         public event EventHandler<DataEventArgs> SendNewData;
         public event EventHandler<EventArgs> SaveData;
+        public event EventHandler<DamageEventArgs> SendDamage;
 
         public void LoadGame(object sender, GameData data)
         {
@@ -35,6 +40,13 @@ namespace System.AddtionalEventStructures
 
             if (handler != null)
                 handler(sender, new DataEventArgs { gameData = data });
+        }
+        public void ReceiveHit(object sender, Damage dmg)
+        {
+            EventHandler<DamageEventArgs> handler = SendDamage;
+
+            if (handler != null)
+                handler(sender, new DamageEventArgs { damage = dmg });
         }
     }
 }

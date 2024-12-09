@@ -12,7 +12,7 @@ public class ZombieManager : Singleton<ZombieManager>
     public byte[,] byteMap;
     public Grid<Node> nodeMap;
     [SerializeField] GameObject zombiePrefab;
-    public Pathfinder pathfinder;
+    [SerializeField] GameObject[] itemPrefabs;
     public Tilemap testMap;
     public TileBase test;
 
@@ -25,10 +25,20 @@ public class ZombieManager : Singleton<ZombieManager>
     {
         if (Input.GetKeyDown(KeyCode.K))
             SpawnZombie();
+
+        if (Input.GetKeyDown(KeyCode.I))
+            SpawnItem(new Vector3(Player.Instance.transform.position.x + 0.48f, Player.Instance.transform.position.y));
     }
 
     void SpawnZombie()
     {
         GameObject zombie = Instantiate(zombiePrefab, new Vector3(Player.Instance.transform.position.x - 3.2f, 20, 0), Quaternion.identity);
+    }
+
+    public void SpawnItem(Vector3 spawnPosition)
+    {
+        System.Random random = new System.Random();
+        int index = random.Next(0, itemPrefabs.Length);
+        GameObject item = Instantiate(itemPrefabs[index], spawnPosition, Quaternion.identity);
     }
 }

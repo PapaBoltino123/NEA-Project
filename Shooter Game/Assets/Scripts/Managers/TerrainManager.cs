@@ -14,13 +14,12 @@ using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine.UIElements;
 using System.AddtionalEventStructures;
 using UnityEditor;
-using System.Algorithms.Pathfinding;
 
 public class TerrainManager : Singleton<TerrainManager>
 {
     #region Variable Declaration
     public int seed; //the number that points to the random generation of the map
-    [SerializeField] int smoothness, waterLevel; //the numbers representing how smooth the map is and how high the water should be
+    public int smoothness, waterLevel; //the numbers representing how smooth the map is and how high the water should be
 
     [NonSerialized] public int chunkWidth = 64; //the width a chunk 
     [NonSerialized] public int chunkHeight = 128; //the height of a chunk

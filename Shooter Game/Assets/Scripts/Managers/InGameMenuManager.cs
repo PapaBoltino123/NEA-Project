@@ -16,7 +16,6 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     public GameObject[] ammoSlots;
     public GameObject[] rangedSlots;
     public GameObject[] meleeSlots;
-    public GameObject[] inventoryHotBarSlots;
 
     [SerializeField] Slider audioSlider, fovSlider;
     private Slider healthBar;
@@ -76,6 +75,7 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     }
     public void LoadPauseMenu()
     {
+        CloseInventory();
         Player.Instance.isPaused = true; //the player is paused
         pauseScreen.SetActive(true); //activate the pause screen
     }
@@ -86,6 +86,7 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     }
     public void LoadInventory()
     {
+        ClosePauseMenu();
         SwitchUIActivity();
         inventoryScreen.SetActive(true);
     }
@@ -139,6 +140,7 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
         {
             menuUI[i].SetActive(false); //hide the settings ui
         }
+
     }
     public void SwitchUIActivity()
     {
@@ -174,6 +176,10 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
         };
 
         return returnColor; //returns said colour
+    }
+    public void OnItemSelected()
+    {
+
     }
     #endregion
 }

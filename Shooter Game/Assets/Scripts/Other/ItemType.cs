@@ -11,6 +11,12 @@ public class ItemType : MonoBehaviour
 
     public void AssignItem()
     {
-        item = new Item(gameObject.name);
+        string name = gameObject.name;
+
+        if (name.Contains('('))
+            name = name.Substring(0, name.Length - 7);
+
+
+        item = new Item(name);
     }
 }

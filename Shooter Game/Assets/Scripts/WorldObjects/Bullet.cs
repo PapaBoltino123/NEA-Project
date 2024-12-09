@@ -5,7 +5,7 @@ using UnityEngine;
 public class Bullet : MonoBehaviour
 {
     private float bulletSpeed = 3f;
-    private float timeAlive = 10f;
+    private float timeAlive = 70f;
     public Vector3 direction = Vector3.zero;
 
     public Vector3 Direction

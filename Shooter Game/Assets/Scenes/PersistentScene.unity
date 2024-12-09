@@ -265,6 +265,7 @@ GameObject:
   m_Component:
   - component: {fileID: 190435807}
   - component: {fileID: 190435808}
+  - component: {fileID: 190435809}
   m_Layer: 0
   m_Name: Spear
   m_TagString: Untagged
@@ -339,6 +340,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &190435809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 190435806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dfbf6bb12495204f8348380449be53f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &195720678
 GameObject:
   m_ObjectHideFlags: 0
@@ -349,6 +362,7 @@ GameObject:
   m_Component:
   - component: {fileID: 195720679}
   - component: {fileID: 195720680}
+  - component: {fileID: 195720681}
   m_Layer: 0
   m_Name: Bandage
   m_TagString: Untagged
@@ -423,6 +437,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &195720681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 195720678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dfbf6bb12495204f8348380449be53f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &268966069
 GameObject:
   m_ObjectHideFlags: 0
@@ -433,6 +459,7 @@ GameObject:
   m_Component:
   - component: {fileID: 268966070}
   - component: {fileID: 268966071}
+  - component: {fileID: 268966072}
   m_Layer: 0
   m_Name: SMG
   m_TagString: Untagged
@@ -508,6 +535,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &268966072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 268966069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dfbf6bb12495204f8348380449be53f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &392786237
 GameObject:
   m_ObjectHideFlags: 0
@@ -860,6 +899,7 @@ GameObject:
   m_Component:
   - component: {fileID: 813211517}
   - component: {fileID: 813211518}
+  - component: {fileID: 813211519}
   m_Layer: 0
   m_Name: Rifle
   m_TagString: Untagged
@@ -935,6 +975,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &813211519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813211516}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dfbf6bb12495204f8348380449be53f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &820803387
 GameObject:
   m_ObjectHideFlags: 0
@@ -1199,6 +1251,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1015520908}
   - component: {fileID: 1015520909}
+  - component: {fileID: 1015520910}
   m_Layer: 0
   m_Name: Sword
   m_TagString: Untagged
@@ -1273,6 +1326,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1015520910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1015520907}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dfbf6bb12495204f8348380449be53f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1058804602
 GameObject:
   m_ObjectHideFlags: 0
@@ -1283,6 +1348,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1058804603}
   - component: {fileID: 1058804604}
+  - component: {fileID: 1058804605}
   m_Layer: 0
   m_Name: RocketLauncher
   m_TagString: Untagged
@@ -1358,6 +1424,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1058804605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1058804602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dfbf6bb12495204f8348380449be53f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1075745676
 GameObject:
   m_ObjectHideFlags: 0
@@ -1368,6 +1446,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1075745677}
   - component: {fileID: 1075745678}
+  - component: {fileID: 1075745679}
   m_Layer: 0
   m_Name: Medicine
   m_TagString: Untagged
@@ -1442,6 +1521,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1075745679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1075745676}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dfbf6bb12495204f8348380449be53f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1265423576
 GameObject:
   m_ObjectHideFlags: 0
@@ -1471,9 +1562,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d09443e624d67d4419c50f8b290911f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 3
+  speed: 1.5
   jumpForce: 5
   zombiePrefab: {fileID: 6921435582792573116, guid: 37a6503fc867b4c49bb25078f9041df8, type: 3}
+  itemPrefabs:
+  - {fileID: 7914582816643082259, guid: 7b6f9aace00f98441bb51eb57b7b1d8d, type: 3}
+  - {fileID: 1388737302009613250, guid: d0756e540ef7de442868a9119f25780f, type: 3}
+  - {fileID: 4025806013138555945, guid: 5e7032527b24b7d4fbed5e0711a5ba01, type: 3}
+  - {fileID: 7798174635106432784, guid: 188409f99e0d5c443945b8f00f6a2174, type: 3}
+  - {fileID: 1956824276214967175, guid: 81e9ac2c89768ab47b6504c4860c20ad, type: 3}
+  - {fileID: 2595619699259000601, guid: d5e26c6f81ef22c4db7ce10c0a525d21, type: 3}
+  - {fileID: 3612734368307906980, guid: ed8389263910fa745974afabf35b5887, type: 3}
+  - {fileID: 6501943767718159502, guid: 2d12b10cd34107648ba47c183a028845, type: 3}
+  - {fileID: 5842259521586422569, guid: d1b4b7494984cc74ea21aae2238eec05, type: 3}
+  - {fileID: 6455848804191519188, guid: 70dacbff543217a4d9a74d5fb27540ac, type: 3}
+  - {fileID: 2433820107461212372, guid: 2a9a0e5f9860cdb45a1997dcddc35bfa, type: 3}
+  - {fileID: 5383420051093085428, guid: 0efb77e65cd31934da86fb57e83e4f5c, type: 3}
+  - {fileID: 5438400735863879336, guid: 834f9b1391a1b8c4eb7878c3a95c836a, type: 3}
+  - {fileID: 8381569231652486371, guid: 1f87c63e291503b4aa9826fd9aa31ec7, type: 3}
   testMap: {fileID: 0}
   test: {fileID: 11400000, guid: accaa484283026c48bb2b04448595ddf, type: 2}
 --- !u!4 &1265423578
@@ -1707,7 +1813,7 @@ Transform:
   m_GameObject: {fileID: 1584742699}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.985, y: -0.8171206, z: 0}
+  m_LocalPosition: {x: -2.985, y: -0.685, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

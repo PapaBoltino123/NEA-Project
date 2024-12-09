@@ -11,17 +11,17 @@ using UnityEngine.Tilemaps;
 
 public class Zombie : MonoBehaviour
 {
-    public delegate void PathFoundCallback(List<Node> path);
     private float speed;
-    private float jumpForce;
+    private float maxJumpForce;
+    private int direction;
     private Grid<Node> nodeMap = null;
-    private Pathfinder pathfinder;
-    private List<Node> path;
     private BoxCollider2D boxCollider;
     private Rigidbody2D rb;
     [SerializeField] LayerMask groundLayer;
     private float gravity;
-    bool runTest = true;
+    bool isJumping = false;
+    bool isBeingAttacked = false;
+    bool handlingJumpAboveWater = false;
 
     private void Awake()
     {
@@ -29,139 +29,52 @@ public class Zombie : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         speed = ZombieManager.Instance.speed;
-        jumpForce = ZombieManager.Instance.jumpForce;
+        maxJumpForce = ZombieManager.Instance.jumpForce;
         nodeMap = ZombieManager.Instance.nodeMap;
-        pathfinder = ZombieManager.Instance.pathfinder;
     }
 
-    private void Start()
+    private void Update()
     {
-        StartCoroutine(CalculatePath());
-    }
+        direction = Player.Instance.transform.position.x > transform.position.x ? 1 : -1;
 
-    private void FindNewPath()
-    {
-        pathfinder.FindPath(nodeMap.GetGridObject(transform.position), nodeMap.GetGridObject(Player.Instance.transform.position), OnPathFound);
-    }
-    public void OnPathFound(List<Node> path)
-    {
-        this.path = path;
-        path.Insert(0, nodeMap.GetGridObject(transform.position));
+        if (handlingJumpAboveWater == false)
+            Move(direction, speed, rb);
 
-        int direction = transform.position.x < Player.Instance.transform.position.x ? 1 : -1;
+        if (IsColliding(new Vector2(direction, 0)) == true)
+            isJumping = true;
 
-        if (direction > 0)
+        if (isBeingAttacked == false)
         {
-            if (path.Last().x > Player.Instance.transform.position.x)
-                path.Remove(path.Last());
+            if (CheckIfAboveWater(new Vector2Int(nodeMap.GetXY(transform.position).x + 1,
+                nodeMap.GetXY(transform.position).y)) == true)
+            {
+                handlingJumpAboveWater = true;
+                isJumping = true;
+            }
         }
-        else if (direction < 0)
+    }
+    private void FixedUpdate()
+    {
+        if (isJumping == true)
         {
-            if (path.Last().x < Player.Instance.transform.position.x)
-                path.Remove(path.Last());
+            Jump(maxJumpForce, rb);
+            StartCoroutine(StopMoveIfAboveLilyPad());
+            isJumping = false;
         }
-
-        path.Add(nodeMap.GetGridObject(Player.Instance.transform.position));
     }
 
-    private float CalculateMaxJumpHeight()
+    private bool IsColliding(Vector2 direction)
     {
-        float maxHeight = (jumpForce * jumpForce) / (2 * gravity);
-        return maxHeight;
-    }
-    private float CalculateMaxJumpWidth()
-    {
-        float maxDistance = (2 * speed * jumpForce) / gravity;
-        return maxDistance;
-    }
-    private int ConvertToGrid(float n)
-    {
-        return (int)System.Math.Floor(n / nodeMap.CellSize);
-    }
-    private bool IsGrounded()
-    {
-        Bounds bounds = boxCollider.bounds;
-        Vector2 boxSize = new Vector2(bounds.size.x, 0.1f);
-        Vector2 boxCenter = new Vector2(bounds.center.x, bounds.min.y - 0.1f / 2);
-
-        RaycastHit2D hit = Physics2D.BoxCast(boxCenter, boxSize, 0f, Vector2.down, 0.1f, groundLayer);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, 0.1f, groundLayer);
 
         if (hit.collider != null)
             return true;
         else
             return false;
     }
-    private IEnumerator CalculatePath()
+    public void Jump(float jumpForce, Rigidbody2D rb)
     {
-        while (IsGrounded() == false)
-        {
-            yield return null;
-        }
-
-        Debug.Log(TerrainLevelChange());
-        if (TerrainLevelChange() == true)
-        {
-            FindNewPath();
-
-            yield return new WaitForSeconds(5);
-
-            try
-            {
-                if (path.Count > 0)
-                {
-                    FollowPath();
-                }
-            }
-            catch
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        //Vector2 direction = (Player.Instance.transform.position.x > transform.position.x) ? Vector2.left : Vector2.right;
-
-        //if (TerrainLevelChange() == true)
-        //{
-        //    StartCoroutine(WalkDistance((int)direction.x, (float)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x))));
-        //}
-        //else
-
-        //else if (TerrainLevelChange() == true)
-        //{
-        //    StartCoroutine(WalkDistance((int)direction.x, (float)System.Math.Abs((decimal)(Player.Instance.transform.position.x - transform.position.x))));
-        //}
-    }
-    private void FollowPath()
-    {
-        for (int i = 0; i < path.Count; i++)
-        {
-            if (i + 1 < path.Count)
-            {
-                if (path[i].y == path[i + 1].y)
-                {
-                    float distance = System.Math.Abs(path[i + 1].x - path[i].x) * 0.16f;
-                    int direction = (path[i + 1].x > path[i].x) ? 1 : -1;
-                    StartCoroutine(WalkDistance(direction, distance));
-                }
-                else if (path[i].y < path[i + 1].y)
-                {
-                    int direction = (path[i + 1].x > path[i].x) ? 1 : -1;
-                    StartCoroutine(JumpToNextNode(direction, path[i + 1]));
-                }
-                else if (path[i].y > path[i + 1].y)
-                {
-                    float distance = System.Math.Abs(path[i + 1].x - path[i].x) * 0.16f;
-                    int direction = (path[i + 1].x > path[i].x) ? 1 : -1;
-                    StartCoroutine(WalkDistance(direction, distance));
-                }
-            }
-            else
-                break;
-        }
-    }
-    public void Jump(int direction, float jumpForce, Rigidbody2D rb)
-    {
-        rb.velocity = new Vector2(speed * direction, jumpForce);
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
     }
     public void Move(int direction, float speed, Rigidbody2D rb)
     {
@@ -175,63 +88,29 @@ public class Zombie : MonoBehaviour
             transform.localScale = new Vector3(-1, 1, 1);
         }
     }
-    private IEnumerator WalkDistance(int direction, float distance, bool lastMoveWasJump = false)
+    private bool CheckIfAboveWater(Vector2Int position)
+    {   
+        Vector3 worldPosition = nodeMap.GetWorldPosition(position.x, position.y);
+        float worldWaterHeight = TerrainManager.Instance.waterLevel * 0.16f;
+        float distance = transform.position.y - worldWaterHeight + 0.16f;
+
+        RaycastHit2D hit = Physics2D.Raycast(worldPosition, Vector2.down, distance, groundLayer);
+
+        if (hit.collider == null)
+            return true;
+        else
+            return false;
+    }
+    private IEnumerator StopMoveIfAboveLilyPad()
     {
-        if (lastMoveWasJump == true)
-            distance -= 0.08f;
-
-        int frames = (int)System.Math.Ceiling((decimal)(distance / (speed * Time.fixedDeltaTime)));
-
-        for (int i = 0; i < frames; i++)
+        while (CheckIfAboveWater(new Vector2Int(nodeMap.GetXY(transform.position).x,
+                nodeMap.GetXY(transform.position).y)) == true)
         {
             Move(direction, speed, rb);
-            yield return new WaitForFixedUpdate();
+            yield return null;
         }
 
-        rb.velocity = Vector3.zero;
-    }
-    private IEnumerator JumpToNextNode(int direction, Node nextNode)
-    {
-        Jump(direction, jumpForce, rb);
-
-        while (nodeMap.GetGridObject(transform.position).y < nextNode.y)
-        {
-            yield return new WaitForFixedUpdate();
-        }
-
-        StartCoroutine(WalkDistance(direction, 0.24f, true));
-    }
-    private bool TerrainLevelChange()
-    {
-        int distance = System.Math.Abs(ZombieManager.Instance.nodeMap.GetXY(Player.Instance.transform.position).x - ZombieManager.Instance.nodeMap.GetXY(transform.position).x);
-        int direction = Player.Instance.transform.position.x > transform.position.x ? 1 : -1;
-
-        if (ZombieManager.Instance.nodeMap.GetXY(transform.position).y != ZombieManager.Instance.nodeMap.GetXY(Player.Instance.transform.position).y)
-            return true;
-
-        int startIndex = ZombieManager.Instance.nodeMap.GetXY(Player.Instance.transform.position).x;
-
-        for (int i = startIndex; i < startIndex + (distance * direction); i += direction)
-        {
-            try
-            {
-                List<byte> column = Enumerable.Range(0, ZombieManager.Instance.byteMap.GetLength(1))
-                .Select(n => ZombieManager.Instance.byteMap[i, n])
-                .ToList();
-
-                if (!column.Contains(1))
-                    return true;
-                if (column.FindIndex(n => n == 1) != ZombieManager.Instance.nodeMap.GetXY(Player.Instance.transform.position).y)
-                    return true;
-                else
-                    continue;
-            }
-            catch
-            {
-                return true;
-            }
-        }
-
-        return false;
+        rb.velocity = new Vector3(0, 0);
+        handlingJumpAboveWater = false;
     }
 }
