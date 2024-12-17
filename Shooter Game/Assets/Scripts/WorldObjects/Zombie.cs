@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Tilemaps;
 
 public class Zombie : MonoBehaviour
@@ -18,60 +19,64 @@ public class Zombie : MonoBehaviour
     private BoxCollider2D boxCollider;
     private Rigidbody2D rb;
     [SerializeField] LayerMask groundLayer;
-    private float gravity;
-    bool isJumping = false;
-    bool isBeingAttacked = false;
-    bool handlingJumpAboveWater = false;
 
     private void Awake()
     {
-        gravity = System.Math.Abs(Physics2D.gravity.y);
-        rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         speed = ZombieManager.Instance.speed;
         maxJumpForce = ZombieManager.Instance.jumpForce;
         nodeMap = ZombieManager.Instance.nodeMap;
     }
 
-    private void Update()
+    void Start()
     {
-        direction = Player.Instance.transform.position.x > transform.position.x ? 1 : -1;
-
-        if (handlingJumpAboveWater == false)
-            Move(direction, speed, rb);
-
-        if (IsColliding(new Vector2(direction, 0)) == true)
-            isJumping = true;
-
-        if (isBeingAttacked == false)
-        {
-            if (CheckIfAboveWater(new Vector2Int(nodeMap.GetXY(transform.position).x + 1,
-                nodeMap.GetXY(transform.position).y)) == true)
-            {
-                handlingJumpAboveWater = true;
-                isJumping = true;
-            }
-        }
+        GameManager.Instance.activePrefabs.Add(gameObject);
+        rb = GetComponent<Rigidbody2D>();
     }
-    private void FixedUpdate()
+
+    void Update()
     {
-        if (isJumping == true)
+        // Determine if the zombie should change direction based on the player's position
+        int direction = CheckDirection();
+        Move(direction, speed, rb);
+
+        // Check for walls and jump if needed
+        if (IsHittingWall() == true)
         {
             Jump(maxJumpForce, rb);
-            StartCoroutine(StopMoveIfAboveLilyPad());
-            isJumping = false;
         }
     }
 
-    private bool IsColliding(Vector2 direction)
+    private int CheckDirection()
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, 0.1f, groundLayer);
-
-        if (hit.collider != null)
-            return true;
-        else
-            return false;
+        return Player.Instance.transform.position.x > transform.position.x ? 1 : -1;
     }
+
+    private bool IsHittingWall()
+    {
+        Vector2 position = transform.position;
+        Vector2 direction = Vector2.right * CheckDirection();
+        float distance = 0.5f;
+
+        RaycastHit2D hit = Physics2D.Raycast(position, direction, distance, groundLayer);
+        return hit.collider != null;
+    }
+    private bool IsApproachingWater()
+    {
+        float groundCheckDistance = 0.16f;
+        float jumpRange = 10 * 0.16f;
+        Vector2 position = transform.position + Vector3.right * CheckDirection() * groundCheckDistance;
+        RaycastHit2D groundHit = Physics2D.Raycast(position, Vector2.down, groundCheckDistance, groundLayer);
+
+        // If no ground ahead, check for a lily pad
+        if (!groundHit.collider)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public void Jump(float jumpForce, Rigidbody2D rb)
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
@@ -87,30 +92,5 @@ public class Zombie : MonoBehaviour
         {
             transform.localScale = new Vector3(-1, 1, 1);
         }
-    }
-    private bool CheckIfAboveWater(Vector2Int position)
-    {   
-        Vector3 worldPosition = nodeMap.GetWorldPosition(position.x, position.y);
-        float worldWaterHeight = TerrainManager.Instance.waterLevel * 0.16f;
-        float distance = transform.position.y - worldWaterHeight + 0.16f;
-
-        RaycastHit2D hit = Physics2D.Raycast(worldPosition, Vector2.down, distance, groundLayer);
-
-        if (hit.collider == null)
-            return true;
-        else
-            return false;
-    }
-    private IEnumerator StopMoveIfAboveLilyPad()
-    {
-        while (CheckIfAboveWater(new Vector2Int(nodeMap.GetXY(transform.position).x,
-                nodeMap.GetXY(transform.position).y)) == true)
-        {
-            Move(direction, speed, rb);
-            yield return null;
-        }
-
-        rb.velocity = new Vector3(0, 0);
-        handlingJumpAboveWater = false;
     }
 }

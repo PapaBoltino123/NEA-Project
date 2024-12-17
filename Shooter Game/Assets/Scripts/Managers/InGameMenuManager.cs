@@ -75,7 +75,7 @@ public class InGameMenuManager : Singleton<InGameMenuManager>
     }
     public void LoadPauseMenu()
     {
-        CloseInventory();
+        inventoryScreen.SetActive(false);
         Player.Instance.isPaused = true; //the player is paused
         pauseScreen.SetActive(true); //activate the pause screen
     }

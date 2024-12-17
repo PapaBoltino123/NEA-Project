@@ -1,6 +1,7 @@
 using System.AdditionalDataStructures;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -32,7 +33,19 @@ public class ZombieManager : Singleton<ZombieManager>
 
     void SpawnZombie()
     {
-        GameObject zombie = Instantiate(zombiePrefab, new Vector3(Player.Instance.transform.position.x - 3.2f, 20, 0), Quaternion.identity);
+        Vector3 spawnPos = Vector3.zero;
+        List<Vector2Int> allSpawnPoints = ChunkManager.Instance.validSpawnPoints.Select(p => new Vector2Int(p.x, p.y)).ToList();
+        Rect bounds = ChunkManager.Instance.loadedArea;
+
+        bounds.xMin += 32;
+        bounds.xMax -= 32;
+        List<Vector2Int> validSpawnPoints = allSpawnPoints
+            .Where(point => bounds.Contains(point))
+            .ToList();
+        Vector2Int gridSpawnPos = validSpawnPoints[Random.Range(0, validSpawnPoints.Count)];
+        spawnPos = new Vector3(gridSpawnPos.x * 0.16f + 0.08f, gridSpawnPos.y * 0.16f + 0.32f);
+
+        GameObject zombie = Instantiate(zombiePrefab, spawnPos, Quaternion.identity);
     }
 
     public void SpawnItem(Vector3 spawnPosition)
@@ -40,5 +53,6 @@ public class ZombieManager : Singleton<ZombieManager>
         System.Random random = new System.Random();
         int index = random.Next(0, itemPrefabs.Length);
         GameObject item = Instantiate(itemPrefabs[index], spawnPosition, Quaternion.identity);
+        GameManager.Instance.activePrefabs.Add(item);
     }
 }

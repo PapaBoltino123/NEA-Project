@@ -40,6 +40,7 @@ public class FileManager
             toStore = CheckToStore(toStore);
             toStore = Player.Instance.playerState.ToString() + "\n" + toStore;
             WriteToFile(toStore);
+            Debug.Log("Saved");
             GameManager.Instance.savedData = new GameData();
         }
     }
@@ -65,6 +66,7 @@ public class FileManager
             {
                 GameData data = (GameData)serializer.Deserialize(stream);
                 dataBroadcast.LoadGame(this, data);
+                Debug.Log("Loaded");
             }
             catch (Exception e)
             {
@@ -75,6 +77,7 @@ public class FileManager
     public void NewGame()
     {
         dataBroadcast.NewGame(this);
+        Debug.Log("New");
     }
     private void WriteToFile(string toStore)
     {
@@ -101,14 +104,27 @@ public class FileManager
             return null;
 
         string[] entries = Directory.GetFileSystemEntries(folderPath, "*", SearchOption.AllDirectories);
-        Array.Sort(entries); 
-        Array.Reverse(entries);
 
-        string playerState = File.ReadLines(entries[0]).First();
+        string mostRecentFile = entries
+            .OrderByDescending(entry =>
+            {
+                var parts = Path.GetFileName(entry).Split('.');
+                return (
+                    Year: int.Parse(parts[2]),
+                    Month: int.Parse(parts[1]),
+                    Day: int.Parse(parts[0]),
+                    Hour: int.Parse(parts[3]),
+                    Minute: int.Parse(parts[4]),
+                    Second: int.Parse(parts[5])
+                );
+            })
+            .First();
+
+        string playerState = File.ReadLines(mostRecentFile).First();
         if (playerState != "ALIVE")
             return null;
-
-        return entries[0];
+        else
+            return mostRecentFile;
     }
     private static string CheckToStore(string s)
     {

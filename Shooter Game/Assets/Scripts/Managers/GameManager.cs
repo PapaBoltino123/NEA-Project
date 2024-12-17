@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public class GameManager : Singleton<GameManager>
 {
     [SerializeField] GameObject player;
-    public List<GameObject> activeActors;
+    public List<GameObject> activePrefabs;
     public List<Thread> activeThreads;
 
     public int volume = 50;
@@ -35,7 +35,7 @@ public class GameManager : Singleton<GameManager>
         eventBroadcaster = new EventBroadcaster();
         fileManager = new FileManager(eventBroadcaster);
         Player.Instance.Initialize();
-        activeActors = new List<GameObject>();
+        activePrefabs = new List<GameObject>();
         player.SetActive(false);
         loadingScreen.SetActive(false);
         SceneManager.LoadSceneAsync((int)SceneType.TITLESCREEN, LoadSceneMode.Additive);
@@ -124,6 +124,14 @@ public class GameManager : Singleton<GameManager>
     }
     public void LoadMainMenu()
     {
+        if (activePrefabs.Count > 0)
+        {
+            foreach (var prefab in activePrefabs)
+            {
+                Destroy(prefab);
+            }
+            activePrefabs.Clear();
+        }
         InGameMenuManager.Instance.SwitchUIActivity();
         InventoryManager.Instance.hotBarSlots = null;
         Player.Instance.EndUpdatingScore();

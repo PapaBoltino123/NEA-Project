@@ -7,6 +7,7 @@ public class Bullet : MonoBehaviour
     private float bulletSpeed = 3f;
     private float timeAlive = 70f;
     public Vector3 direction = Vector3.zero;
+    [SerializeField] LayerMask playerLayer;
 
     public Vector3 Direction
     {
@@ -20,6 +21,7 @@ public class Bullet : MonoBehaviour
 
     private void Shoot()
     {
+        GameManager.Instance.activePrefabs.Add(gameObject);
         StartCoroutine(MoveBullet());
     }
     private IEnumerator MoveBullet()
@@ -40,6 +42,7 @@ public class Bullet : MonoBehaviour
             if (timeElapsed >= timeAlive)
             {
                 Destroy(gameObject);
+                GameManager.Instance.activePrefabs.Remove(gameObject);
                 yield break;
             }
 
@@ -48,7 +51,7 @@ public class Bullet : MonoBehaviour
     }
     private bool IsCollidingWithObstacle()
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, bulletSpeed * Time.deltaTime);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, bulletSpeed * Time.deltaTime, ~playerLayer);
 
         if (hit.collider != null)
             return true;
