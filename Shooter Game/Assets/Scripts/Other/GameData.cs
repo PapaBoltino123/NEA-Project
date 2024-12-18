@@ -14,6 +14,11 @@ public class GameData
     public int seed;
     public int smoothness;
 
+    public float zombieSpeed;
+    public float zombieHealth;
+    public float zombieSpawnRate;
+    public float zombieDamagePoints;
+
     public GameData()
     {
         playerX = -10;
@@ -22,6 +27,10 @@ public class GameData
         playerHealth = 50;
 
         seed = 100000;
-        smoothness = 50;
+        smoothness = -10;
+        zombieSpeed = -10;
+        zombieHealth = -10;
+        zombieSpawnRate = -10;
+        zombieDamagePoints = -10;
     }
 }

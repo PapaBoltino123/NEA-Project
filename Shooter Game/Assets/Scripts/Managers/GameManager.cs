@@ -11,7 +11,6 @@ public class GameManager : Singleton<GameManager>
 {
     [SerializeField] GameObject player;
     public List<GameObject> activePrefabs;
-    public List<Thread> activeThreads;
 
     public int volume = 50;
     public float zoom = 1.5f;
@@ -31,7 +30,6 @@ public class GameManager : Singleton<GameManager>
 
     private void Awake()
     {
-        activeThreads = new List<Thread>();
         eventBroadcaster = new EventBroadcaster();
         fileManager = new FileManager(eventBroadcaster);
         Player.Instance.Initialize();
@@ -155,14 +153,18 @@ public class GameManager : Singleton<GameManager>
         fileManager.SaveGame();
         LoadMainMenu();
     }
-    private void OnApplicationQuit()
+    public int CalculateDifficultyLevel()
     {
-        foreach (var thread in activeThreads)
+        float averageScore = fileManager.CalculateAverageScore();
+
+        if (averageScore > 0)
         {
-            if (thread != null && thread.IsAlive)
-            {
-                thread.Abort();
-            }
+            float difficulty = Mathf.Exp(0.0000262f * averageScore);
+            int difficultyLevel = Mathf.FloorToInt(((difficulty - 1) / 1) * 100);
+            difficultyLevel = (difficultyLevel > 100) ? difficultyLevel : 100;
+            return difficultyLevel;
         }
+        else
+            return 50;
     }
 }
