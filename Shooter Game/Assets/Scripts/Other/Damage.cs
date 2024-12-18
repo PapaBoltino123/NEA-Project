@@ -4,19 +4,20 @@ using UnityEngine;
 
 public class Damage 
 {
-    Vector3 deathPosition;
-    int damagePoints;
-    float knockback;
+    public Vector3 damagePosition;
+    public int damagePoints;
+    public float knockback;
 
     public Damage(int damagePoints, float knockback)
     {
         this.damagePoints = damagePoints;
         this.knockback = knockback;
+        this.damagePosition = Vector3.zero;
     }
-    public Damage(int damagePoints, float knockback, Vector3 deathPosition)
+    public Damage(int damagePoints, float knockback, Vector3 damagePosition)
     {
         this.damagePoints = damagePoints;
         this.knockback = knockback;
-        this.deathPosition = deathPosition;
+        this.damagePosition = damagePosition;
     }
 }

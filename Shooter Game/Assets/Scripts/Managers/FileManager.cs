@@ -30,7 +30,7 @@ public class FileManager
         dataBroadcast.SaveGame(this);
         GameData data = GameManager.Instance.savedData;
 
-        if (data != null )
+        if (data != null)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(GameData));
             MemoryStream stream = new MemoryStream();
@@ -58,7 +58,6 @@ public class FileManager
 
             string toLoad = String.Join("", File.ReadAllLines(filePath).Skip(1).ToArray());
             XmlSerializer serializer = new XmlSerializer(typeof(GameData));
-            object obj = null;
             byte[] byteArray = Encoding.UTF8.GetBytes(toLoad);
             MemoryStream stream = new MemoryStream(byteArray); stream.Position = 0;
 
@@ -109,7 +108,8 @@ public class FileManager
             .OrderByDescending(entry =>
             {
                 var parts = Path.GetFileName(entry).Split('.');
-                return (
+                return
+                (
                     Year: int.Parse(parts[2]),
                     Month: int.Parse(parts[1]),
                     Day: int.Parse(parts[0]),
@@ -148,5 +148,39 @@ public class FileManager
             }
             return pos;
         }
+    }
+    public float CalculateAverageScore()
+    {
+        int scoreSum = 0;
+        string[] entries = Directory.GetFileSystemEntries(folderPath, "*", SearchOption.AllDirectories);
+
+        string[] validEntriesForCalc = entries.Where(file => 
+        (File.ReadAllLines(file).First() == "DEAD"
+        )).ToArray();
+
+        if (validEntriesForCalc.Length > 0)
+        {
+            foreach (string entry in validEntriesForCalc)
+            {
+                string toLoad = String.Join("", File.ReadAllLines(entry).Skip(1).ToArray());
+                XmlSerializer serializer = new XmlSerializer(typeof(GameData));
+                byte[] byteArray = Encoding.UTF8.GetBytes(toLoad);
+                MemoryStream stream = new MemoryStream(byteArray); stream.Position = 0;
+
+                try
+                {
+                    GameData data = (GameData)serializer.Deserialize(stream);
+                    scoreSum += data.score;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
+
+            return scoreSum / validEntriesForCalc.Length;
+        }
+        else
+            return -10;
     }
 }

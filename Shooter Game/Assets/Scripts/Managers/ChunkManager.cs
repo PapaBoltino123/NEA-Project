@@ -211,6 +211,8 @@ public class ChunkManager : Singleton<ChunkManager>
             validSpawnPoints = TerrainManager.Instance.ValidSpawns();
             playerWorldPosition = TerrainManager.Instance.SetPlayerPosition(validSpawnPoints);
         }
+        else
+            validSpawnPoints = TerrainManager.Instance.ValidSpawns();
 
         return playerWorldPosition;
     }

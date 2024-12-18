@@ -17,8 +17,10 @@ public class Player : Singleton<Player>, Actor
     public LayerMask groundLayer;
 
     public int score;
+    private int finalScore = -10;
     public int health;
     public bool isPaused = false;
+    Color normalColour;
 
     [SerializeField] GameObject[] bulletPrefabs;
     [SerializeField] Animator[] weaponAnims;
@@ -44,13 +46,18 @@ public class Player : Singleton<Player>, Actor
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         boxCollider = GetComponent<BoxCollider2D>();
+        normalColour = GetComponent<SpriteRenderer>().color;
 
         GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame);
         GameManager.Instance.fileManager.dataBroadcast.SendNewData += new EventHandler<DataEventArgs>(NewGame);
         GameManager.Instance.fileManager.dataBroadcast.SaveData += new EventHandler<EventArgs>(SaveGame);
+        GameManager.Instance.eventBroadcaster.SendDamage += new EventHandler<DamageEventArgs>(ReceiveHit);
     }
     private void Update()
     {
+        if (health <= 0)
+            OnPlayerDeath();
+
         if (isPaused == false)
         {
             float input = Input.GetAxisRaw("Horizontal");
@@ -231,7 +238,7 @@ public class Player : Singleton<Player>, Actor
     private void SaveGame(object sender, EventArgs e)
     {
         GameManager.Instance.savedData.playerHealth = health;
-        GameManager.Instance.savedData.score = score;
+        GameManager.Instance.savedData.score = (finalScore < 0) ? score : finalScore;
     }
     private void NewGame(object sender, DataEventArgs e)
     {
@@ -239,6 +246,17 @@ public class Player : Singleton<Player>, Actor
         score = data.score;
         health = data.playerHealth;
         InitializeForGame();
+    }
+    private void ReceiveHit(object sender, DamageEventArgs e)
+    {
+        if (sender is Zombie)
+        {
+            health -= e.damage.damagePoints;
+            Vector2 knockbackDir = (transform.position.x > e.damage.damagePosition.x) ? Vector2.right : Vector2.left;
+            StartCoroutine(ChangePlayerColourOnDamage());
+            transform.position = new Vector3(transform.position.x, transform.position.y + 0.32f);
+            rb.AddForce(knockbackDir * 10 * e.damage.damagePoints, ForceMode2D.Impulse);
+        }
     }
     public void BeginUpdatingScore()
     {
@@ -309,7 +327,6 @@ public class Player : Singleton<Player>, Actor
     {
         float normalSpeed = speed;
         float newSpeed = 0.5f;
-        Color normalColour = GetComponent<SpriteRenderer>().color;
         Color healingColour = new Color(21f / 255f, 202f / 255f, 0);
         float elapsedTime = 0f;
         int currentHealth = health;
@@ -345,7 +362,6 @@ public class Player : Singleton<Player>, Actor
         float normalSpeed = speed;
         Color normalColour = GetComponent<SpriteRenderer>().color;
         Color damageColour = new Color(219f / 255f, 0, 0);
-        Color barColour = new Color(0f, 0f, 139f / 255f);
 
         while (health > 0)
         {
@@ -370,13 +386,24 @@ public class Player : Singleton<Player>, Actor
         rb.gravityScale = 1;
 
         isDrowning = false;
-        OnPlayerDeath();
     }
     private void OnPlayerDeath()
     {
-        playerState = PlayerState.DEAD;
-        EndUpdatingScore();
-        GameManager.Instance.score.text = "Final score: " + score;
-        GameManager.Instance.deathScreen.SetActive(true);
+        if (playerState == PlayerState.ALIVE)
+        {
+            playerState = PlayerState.DEAD;
+            EndUpdatingScore();
+            finalScore = score;
+            GameManager.Instance.score.text = "Final score: " + finalScore;
+            GameManager.Instance.deathScreen.SetActive(true);
+        }
+    }
+    private IEnumerator ChangePlayerColourOnDamage()
+    {
+        Color damageColour = new Color(219f / 255f, 0, 0);
+
+        gameObject.GetComponent<SpriteRenderer>().color = damageColour;
+        yield return new WaitForSeconds(0.2f);
+        gameObject.GetComponent<SpriteRenderer>().color = normalColour;
     }
 }

@@ -76,7 +76,9 @@ public class TerrainManager : Singleton<TerrainManager>
     {
         GameData data = e.gameData;
         seed = data.seed;
-        smoothness = data.smoothness;
+        int difficultyLevel = GameManager.Instance.CalculateDifficultyLevel();
+
+        //calculate smoothness
         Initialize();
     }
     private void GenerateWorld()

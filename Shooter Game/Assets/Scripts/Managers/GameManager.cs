@@ -23,7 +23,7 @@ public class GameManager : Singleton<GameManager>
     List<AsyncOperation> scenesLoading = new List<AsyncOperation>();
 
     public FileManager fileManager;
-    private EventBroadcaster eventBroadcaster;
+    public EventBroadcaster eventBroadcaster;
     public GameData savedData = new GameData();
     public byte[,] grid = null;
 

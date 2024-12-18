@@ -14,11 +14,15 @@ public class Zombie : MonoBehaviour
 {
     private float speed;
     private float maxJumpForce;
+    private float cooldown = 2f;
     private int direction;
     private Grid<Node> nodeMap = null;
     private BoxCollider2D boxCollider;
     private Rigidbody2D rb;
     [SerializeField] LayerMask groundLayer;
+    private bool isCollidingWithPlayer = false;
+    int damagePoints = 5;
+    float knockback = 0.5f;
 
     private void Awake()
     {
@@ -32,18 +36,28 @@ public class Zombie : MonoBehaviour
     {
         GameManager.Instance.activePrefabs.Add(gameObject);
         rb = GetComponent<Rigidbody2D>();
+        StartCoroutine(AttackingCheck());
     }
 
     void Update()
     {
-        // Determine if the zombie should change direction based on the player's position
-        int direction = CheckDirection();
-        Move(direction, speed, rb);
-
-        // Check for walls and jump if needed
-        if (IsHittingWall() == true)
+        if (Player.Instance.isPaused == false)
         {
-            Jump(maxJumpForce, rb);
+            rb.constraints = RigidbodyConstraints2D.None;
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+            int direction = CheckDirection();
+            Move(direction, speed, rb);
+
+            if (IsHittingWall() == true)
+            {
+                Jump(maxJumpForce, rb);
+            }
+        }
+        else
+        {
+            rb.constraints = RigidbodyConstraints2D.FreezePositionX;
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+            rb.velocity = Vector3.zero;
         }
     }
 
@@ -61,21 +75,6 @@ public class Zombie : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(position, direction, distance, groundLayer);
         return hit.collider != null;
     }
-    private bool IsApproachingWater()
-    {
-        float groundCheckDistance = 0.16f;
-        float jumpRange = 10 * 0.16f;
-        Vector2 position = transform.position + Vector3.right * CheckDirection() * groundCheckDistance;
-        RaycastHit2D groundHit = Physics2D.Raycast(position, Vector2.down, groundCheckDistance, groundLayer);
-
-        // If no ground ahead, check for a lily pad
-        if (!groundHit.collider)
-        {
-            return true;
-        }
-
-        return false;
-    }
 
     public void Jump(float jumpForce, Rigidbody2D rb)
     {
@@ -91,6 +90,42 @@ public class Zombie : MonoBehaviour
         if (direction < 0)
         {
             transform.localScale = new Vector3(-1, 1, 1);
+        }
+    }
+    private bool IsCollidingWithPlayer(int dir)
+    {
+        Vector2 direction = Vector2.right * dir;
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, 0.05f);
+
+        if (hit.collider.tag == "Player")
+            return true;
+
+        else
+            return false;
+    }
+    private IEnumerator AttackingCheck()
+    {
+        while (true)
+        {
+            if (isCollidingWithPlayer == true)
+            {
+                Attack();
+                isCollidingWithPlayer = false;
+                yield return new WaitForSeconds(cooldown);
+            }
+            yield return null;
+        }
+    }
+    private void Attack()
+    {
+        Damage dmg = new Damage(damagePoints, knockback, transform.position);
+        GameManager.Instance.eventBroadcaster.Hit(this, dmg);
+    }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            isCollidingWithPlayer = true;
         }
     }
 }

@@ -41,7 +41,7 @@ namespace System.AddtionalEventStructures
             if (handler != null)
                 handler(sender, new DataEventArgs { gameData = data });
         }
-        public void ReceiveHit(object sender, Damage dmg)
+        public void Hit(object sender, Damage dmg)
         {
             EventHandler<DamageEventArgs> handler = SendDamage;
 
