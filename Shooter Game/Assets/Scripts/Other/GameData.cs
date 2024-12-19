@@ -15,9 +15,9 @@ public class GameData
     public int smoothness;
 
     public float zombieSpeed;
-    public float zombieHealth;
+    public int zombieHealth;
     public float zombieSpawnRate;
-    public float zombieDamagePoints;
+    public int zombieDamagePoints;
 
     public GameData()
     {

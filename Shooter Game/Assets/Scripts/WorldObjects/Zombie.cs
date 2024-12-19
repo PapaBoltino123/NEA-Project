@@ -1,4 +1,6 @@
+using System;
 using System.AdditionalDataStructures;
+using System.AddtionalEventStructures;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -9,27 +11,35 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 
 public class Zombie : MonoBehaviour
 {
     private float speed;
     private float maxJumpForce;
-    private float cooldown = 2f;
+    private float cooldown = 0.2f;
     private int direction;
     private Grid<Node> nodeMap = null;
     private BoxCollider2D boxCollider;
     private Rigidbody2D rb;
     [SerializeField] LayerMask groundLayer;
+    [SerializeField] Text damageTextPrefab;
     private bool isCollidingWithPlayer = false;
-    int damagePoints = 5;
+
     float knockback = 0.5f;
+    int damagePoints;
+    int health;
 
     private void Awake()
     {
         boxCollider = GetComponent<BoxCollider2D>();
         speed = ZombieManager.Instance.speed;
+        damagePoints = ZombieManager.Instance.damagePoints;
+        health = ZombieManager.Instance.healthMax;
         maxJumpForce = ZombieManager.Instance.jumpForce;
         nodeMap = ZombieManager.Instance.nodeMap;
+
+        GameManager.Instance.eventBroadcaster.SendDamage += new EventHandler<DamageEventArgs>(ReceiveHit);
     }
 
     void Start()
@@ -41,6 +51,15 @@ public class Zombie : MonoBehaviour
 
     void Update()
     {
+        if (health <= 0)
+        {
+            GameManager.Instance.activePrefabs.Remove(gameObject);
+            ZombieManager.Instance.zombieCount--;
+            Player.Instance.score += 50;
+            ZombieManager.Instance.SpawnItem(transform.position);
+            Destroy(gameObject);
+        }
+
         if (Player.Instance.isPaused == false)
         {
             rb.constraints = RigidbodyConstraints2D.None;
@@ -92,17 +111,6 @@ public class Zombie : MonoBehaviour
             transform.localScale = new Vector3(-1, 1, 1);
         }
     }
-    private bool IsCollidingWithPlayer(int dir)
-    {
-        Vector2 direction = Vector2.right * dir;
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, 0.05f);
-
-        if (hit.collider.tag == "Player")
-            return true;
-
-        else
-            return false;
-    }
     private IEnumerator AttackingCheck()
     {
         while (true)
@@ -127,5 +135,24 @@ public class Zombie : MonoBehaviour
         {
             isCollidingWithPlayer = true;
         }
+    }
+    public void ReceiveHit(object sender, DamageEventArgs e)
+    {
+        if (sender is Player || sender is Bullet)
+        {
+            if (Vector2.Distance(transform.position, e.damage.damagePosition) < 0.02f)
+            {
+                health -= e.damage.damagePoints;
+                StartCoroutine(DamageTextIndicator(Convert.ToString(e.damage.damagePoints)));
+            }
+        }
+    }
+    private IEnumerator DamageTextIndicator(string damage)
+    {
+        Text damageText = Instantiate(damageTextPrefab, transform.position, Quaternion.identity).GetComponent<Text>();
+        damageText.text = damage;
+        yield return new WaitForSeconds(0.3f);
+        damageText.text = "";
+        Destroy(damageText.gameObject);
     }
 }

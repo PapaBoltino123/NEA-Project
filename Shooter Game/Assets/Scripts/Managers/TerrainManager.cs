@@ -56,7 +56,6 @@ public class TerrainManager : Singleton<TerrainManager>
                                                                                                                     //and populates the map with new nodes
         perlinNoise = new PerlinNoise(seed); //creates a new instance of the perlin noise class passing in seed as a variable so the same map can be generated again
         surfaceHeights = new int[worldWidth]; //initializes surface heights
-        LoadMapData(0, 0, worldWidth, worldHeight, TileType.SKY); //sets all the nodes tiledata values initially to sky
         GenerateWorld(); //generates the rest of the maps tile data
         StartCoroutine(StartChunkManager(0.5f)); //starts the chunk manager coroutine
     }
@@ -77,13 +76,13 @@ public class TerrainManager : Singleton<TerrainManager>
         GameData data = e.gameData;
         seed = data.seed;
         int difficultyLevel = GameManager.Instance.CalculateDifficultyLevel();
-
-        //calculate smoothness
+        smoothness = Mathf.FloorToInt(-0.9f * difficultyLevel + 95);
         Initialize();
     }
     private void GenerateWorld()
     {
         System.Random rng = new System.Random(seed);
+        LoadMapData(0, 0, worldWidth, worldHeight, TileType.SKY); //sets all the nodes tiledata values initially to sky
         #region Generate Ground
         for (int x = 0; x < worldWidth; x++)
         {
@@ -261,17 +260,24 @@ public class TerrainManager : Singleton<TerrainManager>
         {
             for (int y = startY; y < endY; y++)
             {
-                Node node = map.GetGridObject(x, y);
-                node.TileData = GetTileData(tileType);
-
-                if (node.TileData == GetTileData(TileType.ROCK))
-                    node.RockTileType = GetRockOrTreeType(node);
-                else if (node.TileData == GetTileData(TileType.TREE))
-                    node.TreeTileType = GetRockOrTreeType(node);
-                else
+                try
                 {
-                    node.RockTileType = 100;
-                    node.TreeTileType = 100;
+                    Node node = map.GetGridObject(x, y);
+                    node.TileData = GetTileData(tileType);
+
+                    if (node.TileData == GetTileData(TileType.ROCK))
+                        node.RockTileType = GetRockOrTreeType(node);
+                    else if (node.TileData == GetTileData(TileType.TREE))
+                        node.TreeTileType = GetRockOrTreeType(node);
+                    else
+                    {
+                        node.RockTileType = 100;
+                        node.TreeTileType = 100;
+                    }
+                }
+                catch
+                {
+
                 }
 ;           }
         }

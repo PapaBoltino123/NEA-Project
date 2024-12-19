@@ -13,9 +13,9 @@ public class ZombieManager : Singleton<ZombieManager>
 {
     public float speed;
     public float jumpForce = 5;
-    public float healthMax;
+    public int healthMax;
     public float spawnRate;
-    public float damagePoints;
+    public int damagePoints;
     public byte[,] byteMap;
     public Grid<Node> nodeMap;
 
@@ -25,7 +25,7 @@ public class ZombieManager : Singleton<ZombieManager>
     public int zombieCount = 0;
     const int zombieCap = 10;
 
-    private void Awake()
+    private void Start()
     {
         GameManager.Instance.fileManager.dataBroadcast.SendLoadedData += new EventHandler<DataEventArgs>(LoadGame);
         GameManager.Instance.fileManager.dataBroadcast.SendNewData += new EventHandler<DataEventArgs>(NewGame);
@@ -34,10 +34,7 @@ public class ZombieManager : Singleton<ZombieManager>
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.K))
-            SpawnZombie();
-
-        if (Input.GetKeyDown(KeyCode.I))
+        if (Input.GetKeyDown(KeyCode.I)) //debug purposes
             SpawnItem(new Vector3(Player.Instance.transform.position.x + 0.48f, Player.Instance.transform.position.y));
     }
 
@@ -52,7 +49,7 @@ public class ZombieManager : Singleton<ZombieManager>
         List<Vector2Int> validSpawnPoints = allSpawnPoints
             .Where(point => bounds.Contains(point))
             .ToList();
-        Vector2Int gridSpawnPos = validSpawnPoints[Random.Range(0, validSpawnPoints.Count)];
+        Vector2Int gridSpawnPos = validSpawnPoints[UnityEngine.Random.Range(0, validSpawnPoints.Count)];
         spawnPos = new Vector3(gridSpawnPos.x * 0.16f + 0.08f, gridSpawnPos.y * 0.16f + 0.32f);
 
         GameObject zombie = Instantiate(zombiePrefab, spawnPos, Quaternion.identity);
@@ -85,6 +82,30 @@ public class ZombieManager : Singleton<ZombieManager>
         GameData data = e.gameData;
         int difficultyLevel = GameManager.Instance.CalculateDifficultyLevel();
 
-        //do logic for difficulty level
+        damagePoints = Mathf.FloorToInt(difficultyLevel / 10);
+        speed = difficultyLevel / 33.33333333333333f;
+        spawnRate = Mathf.Max((-0.16f * difficultyLevel + 18f), 0);
+        healthMax = Mathf.FloorToInt(difficultyLevel / 5);
+    }
+
+    public void StartZombieSpawning()
+    {
+        StartCoroutine(ZombieSpawning());
+    }
+    public void StopZombieSpawning()
+    {
+        StopCoroutine(ZombieSpawning());
+    }
+    private IEnumerator ZombieSpawning()
+    {
+        while (true)
+        {
+            if (zombieCount < zombieCap)
+            {
+                SpawnZombie();
+                zombieCount++;
+                yield return new WaitForSeconds(spawnRate);
+            }
+        }
     }
 }

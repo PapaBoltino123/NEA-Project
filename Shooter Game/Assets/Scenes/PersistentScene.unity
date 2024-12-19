@@ -1564,6 +1564,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 1.5
   jumpForce: 5
+  healthMax: 0
+  spawnRate: 0
+  damagePoints: 0
   zombiePrefab: {fileID: 6921435582792573116, guid: 37a6503fc867b4c49bb25078f9041df8, type: 3}
   itemPrefabs:
   - {fileID: 7914582816643082259, guid: 7b6f9aace00f98441bb51eb57b7b1d8d, type: 3}
@@ -1580,8 +1583,7 @@ MonoBehaviour:
   - {fileID: 5383420051093085428, guid: 0efb77e65cd31934da86fb57e83e4f5c, type: 3}
   - {fileID: 5438400735863879336, guid: 834f9b1391a1b8c4eb7878c3a95c836a, type: 3}
   - {fileID: 8381569231652486371, guid: 1f87c63e291503b4aa9826fd9aa31ec7, type: 3}
-  testMap: {fileID: 0}
-  test: {fileID: 11400000, guid: accaa484283026c48bb2b04448595ddf, type: 2}
+  zombieCount: 0
 --- !u!4 &1265423578
 Transform:
   m_ObjectHideFlags: 0
@@ -2304,7 +2306,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 1584742699}
-  activeActors: []
+  activePrefabs: []
   volume: 50
   zoom: 1.5
   loadProgress: 0
@@ -2318,6 +2320,10 @@ MonoBehaviour:
     playerHealth: 50
     seed: 100000
     smoothness: 50
+    zombieSpeed: -10
+    zombieHealth: -10
+    zombieSpawnRate: -10
+    zombieDamagePoints: -10
   mainGameLoaded: 0
 --- !u!4 &2055800948
 Transform:

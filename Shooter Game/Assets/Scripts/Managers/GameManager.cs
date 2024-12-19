@@ -118,10 +118,13 @@ public class GameManager : Singleton<GameManager>
         InGameMenuManager.Instance.SwitchUIActivity();
         Player.Instance.isPaused = false;
         Player.Instance.BeginUpdatingScore();
+        ZombieManager.Instance.StartZombieSpawning();
         scenesLoading.Clear();
     }
     public void LoadMainMenu()
     {
+        ZombieManager.Instance.StopZombieSpawning();
+
         if (activePrefabs.Count > 0)
         {
             foreach (var prefab in activePrefabs)
@@ -130,6 +133,7 @@ public class GameManager : Singleton<GameManager>
             }
             activePrefabs.Clear();
         }
+
         InGameMenuManager.Instance.SwitchUIActivity();
         InventoryManager.Instance.hotBarSlots = null;
         Player.Instance.EndUpdatingScore();
@@ -137,7 +141,6 @@ public class GameManager : Singleton<GameManager>
         loadingScreen.SetActive(true);
         scenesLoading.Add(SceneManager.UnloadSceneAsync((int)SceneType.MAINGAME));
         scenesLoading.Add(SceneManager.LoadSceneAsync((int)SceneType.TITLESCREEN, LoadSceneMode.Additive));
-
         StartCoroutine(GetMenuSceneLoadProgress());
     }
     public void OnPlayerDeath()

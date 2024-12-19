@@ -5,6 +5,8 @@ using UnityEngine;
 public class Bullet : MonoBehaviour
 {
     private float bulletSpeed = 3f;
+    public float knockBack;
+    public int damagePoints = 0;
     private float timeAlive = 70f;
     public Vector3 direction = Vector3.zero;
     [SerializeField] LayerMask playerLayer;
@@ -34,6 +36,7 @@ public class Bullet : MonoBehaviour
 
             if (IsCollidingWithObstacle() == true)
             {
+                yield return new WaitForSeconds(0.1f);
                 Destroy(gameObject);
                 yield break;
             }
@@ -57,5 +60,16 @@ public class Bullet : MonoBehaviour
             return true;
         else
             return false;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Zombie"))
+            Hit();
+    }
+    private void Hit()
+    {
+        Damage dmg = new Damage(damagePoints, knockBack, transform.position);
+        GameManager.Instance.eventBroadcaster.Hit(this, dmg);
     }
 }
