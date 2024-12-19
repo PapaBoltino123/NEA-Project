@@ -100,6 +100,7 @@ public class GameManager : Singleton<GameManager>
         InventoryManager.Instance.NewGame();
         InventoryManager.Instance.hotBarSlots = InGameMenuManager.Instance.hotBarSlots;
         InventoryManager.Instance.activeSlotIndex = (int)HotBarType.RANGED;
+        ZombieManager.Instance.zombieCount = 0;
         player.SetActive(true);
 
         if (isNewGame == true)

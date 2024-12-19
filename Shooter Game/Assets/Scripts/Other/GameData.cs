@@ -27,10 +27,10 @@ public class GameData
         playerHealth = 50;
 
         seed = 100000;
-        smoothness = -10;
-        zombieSpeed = -10;
-        zombieHealth = -10;
-        zombieSpawnRate = -10;
-        zombieDamagePoints = -10;
+        smoothness = 50;
+        zombieSpeed = 2;
+        zombieHealth = 10;
+        zombieSpawnRate = 1.5f;
+        zombieDamagePoints = 5;
     }
 }

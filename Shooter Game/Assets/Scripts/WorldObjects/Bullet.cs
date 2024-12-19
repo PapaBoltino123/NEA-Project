@@ -36,7 +36,6 @@ public class Bullet : MonoBehaviour
 
             if (IsCollidingWithObstacle() == true)
             {
-                yield return new WaitForSeconds(0.1f);
                 Destroy(gameObject);
                 yield break;
             }
@@ -57,16 +56,16 @@ public class Bullet : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, bulletSpeed * Time.deltaTime, ~playerLayer);
 
         if (hit.collider != null)
+        {
+            if (hit.collider.gameObject.CompareTag("Zombie"))
+                Hit();
+
             return true;
+        }
         else
             return false;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Zombie"))
-            Hit();
-    }
     private void Hit()
     {
         Damage dmg = new Damage(damagePoints, knockBack, transform.position);

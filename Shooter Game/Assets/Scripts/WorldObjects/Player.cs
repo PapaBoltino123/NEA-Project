@@ -299,6 +299,8 @@ public class Player : Singleton<Player>, Actor
     {
         GameObject bulletObject = Instantiate(bulletPrefabs[0], firePoint.position, activeRangedWeapon.transform.rotation * Quaternion.Euler(0, 0, 90));
         Bullet bullet = bulletObject.GetComponent<Bullet>();
+        bullet.damagePoints = weapon.damage;
+        bullet.knockBack = weapon.knockback;
         bullet.Direction = GetBulletDirection();
     }
     private Vector3 GetBulletDirection()

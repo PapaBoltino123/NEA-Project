@@ -82,10 +82,10 @@ public class ZombieManager : Singleton<ZombieManager>
         GameData data = e.gameData;
         int difficultyLevel = GameManager.Instance.CalculateDifficultyLevel();
 
-        damagePoints = Mathf.FloorToInt(difficultyLevel / 10);
-        speed = difficultyLevel / 33.33333333333333f;
-        spawnRate = Mathf.Max((-0.16f * difficultyLevel + 18f), 0);
-        healthMax = Mathf.FloorToInt(difficultyLevel / 5);
+        damagePoints = e.gameData.zombieDamagePoints;
+        speed = e.gameData.zombieSpeed;
+        spawnRate = e.gameData.zombieSpawnRate;
+        healthMax = e.gameData.zombieHealth;
     }
 
     public void StartZombieSpawning()
@@ -106,6 +106,7 @@ public class ZombieManager : Singleton<ZombieManager>
                 zombieCount++;
                 yield return new WaitForSeconds(spawnRate);
             }
+            yield return null;
         }
     }
 }

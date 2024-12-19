@@ -76,7 +76,7 @@ public class TerrainManager : Singleton<TerrainManager>
         GameData data = e.gameData;
         seed = data.seed;
         int difficultyLevel = GameManager.Instance.CalculateDifficultyLevel();
-        smoothness = Mathf.FloorToInt(-0.9f * difficultyLevel + 95);
+        smoothness = e.gameData.smoothness;
         Initialize();
     }
     private void GenerateWorld()
@@ -87,7 +87,7 @@ public class TerrainManager : Singleton<TerrainManager>
         for (int x = 0; x < worldWidth; x++)
         {
             double n = System.Math.Round((double)x / 10, 2);
-            int perlinHeight = Convert.ToInt32(perlinNoise.GenerateNoise(n / smoothness) * worldHeight) + 12;
+            int perlinHeight = Mathf.Min(Mathf.Abs(Convert.ToInt32(perlinNoise.GenerateNoise(n / smoothness) * worldHeight) + 12), worldHeight);
             surfaceHeights[x] = perlinHeight;
 
             LoadMapData(x, 0, x + 1, surfaceHeights[x] - 1, TileType.DIRT);
@@ -260,24 +260,17 @@ public class TerrainManager : Singleton<TerrainManager>
         {
             for (int y = startY; y < endY; y++)
             {
-                try
-                {
-                    Node node = map.GetGridObject(x, y);
-                    node.TileData = GetTileData(tileType);
+                Node node = map.GetGridObject(x, y);
+                node.TileData = GetTileData(tileType);
 
-                    if (node.TileData == GetTileData(TileType.ROCK))
-                        node.RockTileType = GetRockOrTreeType(node);
-                    else if (node.TileData == GetTileData(TileType.TREE))
-                        node.TreeTileType = GetRockOrTreeType(node);
-                    else
-                    {
-                        node.RockTileType = 100;
-                        node.TreeTileType = 100;
-                    }
-                }
-                catch
+                if (node.TileData == GetTileData(TileType.ROCK))
+                    node.RockTileType = GetRockOrTreeType(node);
+                else if (node.TileData == GetTileData(TileType.TREE))
+                    node.TreeTileType = GetRockOrTreeType(node);
+                else
                 {
-
+                    node.RockTileType = 100;
+                    node.TreeTileType = 100;
                 }
 ;           }
         }

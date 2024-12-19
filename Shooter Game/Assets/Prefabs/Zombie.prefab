@@ -196,3 +196,4 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  damageTextPrefab: {fileID: 8510548969014765854, guid: 954f455c2fc603c4298ceb36b622092d, type: 3}

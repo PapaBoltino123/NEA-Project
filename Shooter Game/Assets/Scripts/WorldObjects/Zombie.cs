@@ -28,7 +28,7 @@ public class Zombie : MonoBehaviour
 
     float knockback = 0.5f;
     int damagePoints;
-    int health;
+    int health = 10;
 
     private void Awake()
     {
@@ -51,7 +51,7 @@ public class Zombie : MonoBehaviour
 
     void Update()
     {
-        if (health <= 0)
+        if (health < 1)
         {
             GameManager.Instance.activePrefabs.Remove(gameObject);
             ZombieManager.Instance.zombieCount--;
